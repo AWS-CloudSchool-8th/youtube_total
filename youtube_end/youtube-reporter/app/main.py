@@ -70,3 +70,18 @@ async def root():
             "health": "/health"
         }
     }
+
+if __name__ == "__main__":
+    import uvicorn
+    print("🚀 YouTube Reporter API 서버를 시작합니다...")
+    print("📡 API 서버: http://localhost:8001")
+    print("📖 API 문서: http://localhost:8001/docs")
+    print("\n" + "="*50)
+    
+    uvicorn.run(
+        app,
+        host="0.0.0.0",
+        port=8001,
+        reload=True,
+        log_level="info"
+    )

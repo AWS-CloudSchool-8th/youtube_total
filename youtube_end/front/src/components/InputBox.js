@@ -289,10 +289,7 @@ const InputBox = () => {
           </div>
         )}
         <Input
-          placeholder={analysisMode === 'reporter' ? 
-            "YouTube URL, 문서 파일, 또는 검색어 입력" : 
-            "YouTube URL을 입력하여 챗봇과 대화하세요"
-          }
+          placeholder="YouTube URL, 문서 파일, 또는 검색어 입력 (YouTube URL은 자동으로 S3 저장 + 분석)"
           value={inputValue}
           onChange={e => setInputValue(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter') handleInput(); }}

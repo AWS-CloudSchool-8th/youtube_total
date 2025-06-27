@@ -144,7 +144,13 @@ const StatusMessage = styled.div`
 `;
 
 const BedrockChat = ({ onClose }) => {
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState([
+    {
+      role: 'assistant',
+      content: '안녕하세요! YouTube 동영상에 대해 질문해주세요. 먼저 YouTube URL을 처리해주시면 더 정확한 답변을 드릴 수 있습니다.',
+      timestamp: new Date().toISOString()
+    }
+  ]);
   const [inputValue, setInputValue] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -159,10 +165,10 @@ const BedrockChat = ({ onClose }) => {
     scrollToBottom();
   }, [messages]);
 
-  // 채팅 히스토리 로드
-  useEffect(() => {
-    loadChatHistory();
-  }, []);
+  // 채팅 히스토리 로드 - 비활성화 (DB 저장 불필요)
+  // useEffect(() => {
+  //   loadChatHistory();
+  // }, []);
 
   const loadChatHistory = async () => {
     try {

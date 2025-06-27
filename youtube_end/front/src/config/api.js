@@ -1,8 +1,8 @@
 // API 설정
 const API_CONFIG = {
-  // YouTube Reporter API (포트 8001)
+  // YouTube Reporter API (포트 8001) - YouTube 분석, 문서 분석 등
   REPORTER_API: {
-    BASE_URL: process.env.REACT_APP_REPORTER_API_URL || 'http://localhost:8000',
+    BASE_URL: process.env.REACT_APP_REPORTER_API_URL || 'http://localhost:8001',
     ENDPOINTS: {
       YOUTUBE_ANALYSIS: '/youtube/analysis',
       YOUTUBE_SEARCH: '/youtube/search',
@@ -17,7 +17,7 @@ const API_CONFIG = {
     }
   },
   
-  // Bedrock Chatbot API (포트 8000)
+  // Bedrock Chatbot API (포트 8000) - 챗봇, vidcap 처리 등
   BEDROCK_API: {
     BASE_URL: process.env.REACT_APP_BEDROCK_API_URL || 'http://localhost:8000',
     ENDPOINTS: {
@@ -125,10 +125,12 @@ export const apiHelpers = {
   bedrockApi: {
     async post(endpoint, data, config = {}) {
       const url = `${API_CONFIG.BEDROCK_API.BASE_URL}${endpoint}`;
+      const token = localStorage.getItem('access_token');
       return await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` }),
           ...config.headers
         },
         body: JSON.stringify(data),
@@ -138,10 +140,12 @@ export const apiHelpers = {
     
     async get(endpoint, config = {}) {
       const url = `${API_CONFIG.BEDROCK_API.BASE_URL}${endpoint}`;
+      const token = localStorage.getItem('access_token');
       return await fetch(url, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` }),
           ...config.headers
         },
         ...config
@@ -150,10 +154,12 @@ export const apiHelpers = {
     
     async delete(endpoint, config = {}) {
       const url = `${API_CONFIG.BEDROCK_API.BASE_URL}${endpoint}`;
+      const token = localStorage.getItem('access_token');
       return await fetch(url, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` }),
           ...config.headers
         },
         ...config
@@ -164,7 +170,7 @@ export const apiHelpers = {
 
 // 통합 API 서비스
 export const apiService = {
-  // YouTube 분석 (Reporter API 사용)
+  // YouTube 분석 (Reporter API 사용) - 깊이 있는 분석
   async analyzeYouTube(youtubeUrl) {
     const response = await apiHelpers.reporterApi.post(
       API_CONFIG.REPORTER_API.ENDPOINTS.YOUTUBE_ANALYSIS,
@@ -202,12 +208,15 @@ export const apiService = {
     return await response.json();
   },
   
-  // YouTube 처리 (Bedrock API 사용)
+  // YouTube 처리 (Bedrock API 사용) - vidcap API + S3 저장 + KB 동기화
   async processYouTubeForChatbot(youtubeUrl) {
-    const response = await apiHelpers.bedrockApi.post(
-      API_CONFIG.BEDROCK_API.ENDPOINTS.PROCESS_YOUTUBE,
-      { youtube_url: youtubeUrl }
-    );
+    // URL 파라미터로 youtube_url 전달
+    const endpoint = `${API_CONFIG.BEDROCK_API.ENDPOINTS.PROCESS_YOUTUBE}?youtube_url=${encodeURIComponent(youtubeUrl)}`;
+    console.log('🔍 processYouTubeForChatbot 호출됨');
+    console.log('🔍 YouTube URL:', youtubeUrl);
+    console.log('🔍 요청 엔드포인트:', endpoint);
+    const response = await apiHelpers.bedrockApi.get(endpoint);
+    console.log('🔍 응답 받음:', response);
     return await response.json();
   },
   

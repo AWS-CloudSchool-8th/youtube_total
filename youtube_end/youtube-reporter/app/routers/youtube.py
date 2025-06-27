@@ -38,7 +38,7 @@ class YouTubeAnalysisRequestBody(BaseModel):
 async def analyze_youtube_with_fsm(
     request: YouTubeAnalysisRequestBody,
     raw_request: Request,
-    current_user: dict = Depends(get_current_user)
+    # current_user: dict = Depends(get_current_user)  # Temporarily disabled
 ):
     """LangGraph FSM을 사용한 YouTube 분석"""
     from app.services.analysis_service import analysis_service
@@ -51,10 +51,10 @@ async def analyze_youtube_with_fsm(
     print(f"DEBUG: Raw body: {body}")
     
     try:
-        # user_id를 명시적으로 전달
+        # user_id를 명시적으로 전달 (임시로 하드코딩)
         result = await analysis_service.analyze_youtube_with_fsm(
             request.youtube_url,
-            user_id=current_user["user_id"]
+            user_id="temp_user"  # Temporarily hardcoded
         )
         return result
         

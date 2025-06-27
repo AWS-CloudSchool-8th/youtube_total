@@ -245,7 +245,8 @@ const Dashboard = () => {
   const [progressMap, setProgressMap] = useState({});
   const [showChatbot, setShowChatbot] = useState(false);
 
-  // 진행중 작업 목록 및 진행률 주기적 fetch
+  // 진행중 작업 목록 및 진행률 주기적 fetch 
+  // 조윤지 코드 안에 주석 처리 함
   useEffect(() => {
     let interval;
     const fetchJobs = async () => {
@@ -277,6 +278,67 @@ const Dashboard = () => {
 
   // S3에서 보고서 목록 가져오기
   useEffect(() => {
+    //조윤지 코드 수정 밑에 주석처리 풀기
+    // const fetchReports = async () => {
+    //   try {
+    //     setLoading(true);
+    
+    //     // 1. 인증된 보고서 목록 시도
+    //     let response;
+    //     try {
+    //       response = await axios.get('/s3/reports/list');
+    //       if (Array.isArray(response.data) && response.data.length > 0) {
+    //         // ... (기존 메타데이터 포함 처리)
+    //         // (생략)
+    //         return;
+    //       }
+    //     } catch (err) {
+    //       // 404/401 등 실패 시 S3에서 직접 가져오기 시도
+    //       console.warn('인증 보고서 목록 실패, S3에서 직접 가져오기 시도:', err);
+    //     }
+    
+    //     // 2. S3에서 직접 객체 목록 가져오기
+    //     response = await axios.get('/s3/list?prefix=reports/');
+    //     if (response.data && Array.isArray(response.data.objects)) {
+    //       const reports = response.data.objects
+    //         .filter(obj => obj.Key && obj.Key.endsWith('_report.json'))
+    //         .map(obj => ({
+    //           id: obj.Key,
+    //           title: extractTitleFromKey(obj.Key) || '제목 없음',
+    //           type: 'YouTube',
+    //           date: obj.LastModified || new Date().toISOString(),
+    //           status: 'completed',
+    //           hasAudio: false,
+    //           reportUrl: `https://${response.data.bucket}.s3.${response.data.region}.amazonaws.com/${obj.Key}`
+    //         }));
+    //       reports.sort((a, b) => new Date(b.date) - new Date(a.date));
+    //       setRecentAnalyses(reports);
+    //       setStats({
+    //         totalAnalyses: reports.length,
+    //         savedReports: reports.length,
+    //         audioFiles: 0,
+    //         totalViews: reports.length * 3
+    //       });
+    //       return;
+    //     }
+    
+    //     // 3. 데이터가 없으면 더미 데이터
+    //     setRecentAnalyses([]);
+    //     setStats({
+    //       totalAnalyses: 0,
+    //       savedReports: 0,
+    //       audioFiles: 0,
+    //       totalViews: 0
+    //     });
+    
+    //   } catch (err) {
+    //     console.error('보고서 목록 가져오기 실패:', err);
+    //     setError('보고서 목록을 가져오는데 실패했습니다.');
+    //   } finally {
+    //     setLoading(false);
+    //   }
+    // };
+    //여기까지 주석처리 풀기 조윤지지 -> 여기가 341번 부터 원래 코드
     const fetchReports = async () => {
       try {
         setLoading(true);
@@ -332,6 +394,7 @@ const Dashboard = () => {
         setLoading(false);
       }
     };
+    //여기까지 주석처리 풀기
     
     // S3에서 직접 보고서 가져오기 (백업 방법)
     const fetchReportsFromS3 = async () => {
@@ -599,6 +662,20 @@ const Dashboard = () => {
           )}
         </Section>
       </Content>
+      {recentAnalyses.length > 0 && (
+        <>
+          <FloatingChatbotButton onClick={() => setShowChatbot(true)} title="챗봇과 대화하기">
+            🤖
+          </FloatingChatbotButton>
+          {showChatbot && (
+            <ModalOverlay onClick={() => setShowChatbot(false)}>
+              <div onClick={e => e.stopPropagation()}>
+                <BedrockChat />
+              </div>
+            </ModalOverlay>
+          )}
+        </>
+      )}
       <Footer />
     </PageContainer>
   );
