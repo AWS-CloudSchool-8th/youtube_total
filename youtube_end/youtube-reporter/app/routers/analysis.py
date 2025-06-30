@@ -1,6 +1,8 @@
-from fastapi import APIRouter, HTTPException, BackgroundTasks, UploadFile, File, Form, Query
+from fastapi import APIRouter, HTTPException, BackgroundTasks, UploadFile, File, Form, Query, Header
 from typing import List, Optional
 from datetime import datetime
+import uuid
+import jwt
 
 from app.models.analysis import (
     VideoInfo, SearchRequest, YouTubeAnalysisRequest,
@@ -9,12 +11,36 @@ from app.models.analysis import (
 from app.services.s3_service import s3_service
 from app.services.audio_service import audio_service
 from app.services.analysis_service import analysis_service
+from app.services.youtube_processing_service import youtube_processing_service
+from app.services.cognito_service import get_user_info
 from app.core.config import settings
 
 router = APIRouter(prefix="/analysis", tags=["analysis"])
 
 # 분석 작업 저장소
 analysis_jobs = {}
+
+def get_current_user_email(authorization: Optional[str] = Header(None)) -> str:
+    """인증된 사용자의 이메일 가져오기 - JWT 디코딩 사용"""
+    if not authorization or not authorization.startswith("Bearer "):
+        return "anonymous@example.com"
+    
+    try:
+        id_token = authorization.split(" ")[1]
+        
+        # JWT 디코딩 (검증 없이)
+        payload = jwt.decode(id_token, options={"verify_signature": False})
+        
+        # email 클레임 추출
+        email = payload.get("email")
+        if email:
+            return email
+        else:
+            return "anonymous@example.com"
+            
+    except Exception as e:
+        print(f"⚠️ JWT 디코딩 실패: {e}")
+        return "anonymous@example.com"
 
 @router.get("/")
 async def list_analysis_jobs():
@@ -162,4 +188,84 @@ async def health_check():
         "total_jobs": len(analysis_jobs),
         "supported_formats": [".pdf", ".docx", ".xlsx", ".csv", ".txt"],
         "timestamp": datetime.now().isoformat()
-    } 
+    }
+
+@router.post("/youtube", response_model=AnalysisResponse)
+async def analyze_youtube(
+    request: YouTubeAnalysisRequest, 
+    background_tasks: BackgroundTasks,
+    authorization: Optional[str] = Header(None)
+):
+    """YouTube URL 분석 - Cognito 인증된 사용자 이메일 사용"""
+    job_id = str(uuid.uuid4())
+    
+    # Cognito 인증된 사용자 이메일 가져오기
+    user_email = get_current_user_email(authorization)
+    user_id = request.user_id or user_email.split("@")[0]  # 이메일에서 사용자 ID 추출
+    
+    print(f"🔐 인증된 사용자: {user_email}")
+    
+    # 작업 초기화
+    analysis_jobs[job_id] = {
+        "request_id": job_id,
+        "status": "processing",
+        "current_step": "YouTube 처리 시작",
+        "progress": 0,
+        "input_type": "youtube",
+        "youtube_url": request.youtube_url,
+        "user_email": user_email,
+        "user_id": user_id,
+        "created_at": datetime.now(),
+        "result": None,
+        "error": None
+    }
+    
+    async def process_youtube_analysis():
+        try:
+            # 진행률 업데이트
+            analysis_jobs[job_id]["current_step"] = "YouTube 자막 추출 및 S3 저장"
+            analysis_jobs[job_id]["progress"] = 20
+            
+            # 1. YouTubeProcessingService로 YouTube 처리 (Cognito 사용자 이메일 사용)
+            youtube_result = await youtube_processing_service.process_youtube_to_s3(
+                youtube_url=request.youtube_url,
+                user_email=user_email
+            )
+            
+            analysis_jobs[job_id]["current_step"] = "LangGraph FSM 분석 실행"
+            analysis_jobs[job_id]["progress"] = 50
+            
+            # 2. LangGraph FSM 분석
+            analysis_result = await analysis_service.analyze_youtube_with_fsm(
+                youtube_url=request.youtube_url,
+                job_id=job_id,
+                user_id=user_id,
+                user_email=user_email
+            )
+            
+            analysis_jobs[job_id]["current_step"] = "분석 완료"
+            analysis_jobs[job_id]["progress"] = 100
+            analysis_jobs[job_id]["status"] = "completed"
+            analysis_jobs[job_id]["completed_at"] = datetime.now()
+            analysis_jobs[job_id]["result"] = analysis_result.analysis_results
+            
+            print(f"✅ YouTube 분석 완료: {job_id}")
+            print(f"📧 사용자 이메일: {user_email}")
+            print(f"📁 S3 저장 경로: {youtube_result['s3_key']}")
+            
+        except Exception as e:
+            analysis_jobs[job_id]["status"] = "failed"
+            analysis_jobs[job_id]["error"] = str(e)
+            analysis_jobs[job_id]["completed_at"] = datetime.now()
+            print(f"❌ YouTube 분석 실패: {job_id} - {str(e)}")
+    
+    # 백그라운드에서 분석 실행
+    background_tasks.add_task(process_youtube_analysis)
+    
+    return AnalysisResponse(
+        id=job_id,
+        status="processing",
+        analysis_results=None,
+        created_at=datetime.now(),
+        completed_at=None
+    ) 

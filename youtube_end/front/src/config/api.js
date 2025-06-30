@@ -1,8 +1,8 @@
 // API 설정
 const API_CONFIG = {
-  // YouTube Reporter API (포트 8001) - YouTube 분석, 문서 분석 등
+  // YouTube Reporter API (포트 8000) - YouTube 분석, 문서 분석 등
   REPORTER_API: {
-    BASE_URL: process.env.REACT_APP_REPORTER_API_URL || 'http://localhost:8001',
+    BASE_URL: process.env.REACT_APP_REPORTER_API_URL || 'http://localhost:8000',
     ENDPOINTS: {
       YOUTUBE_ANALYSIS: '/youtube/analysis',
       YOUTUBE_SEARCH: '/youtube/search',
@@ -17,14 +17,14 @@ const API_CONFIG = {
     }
   },
   
-  // Bedrock Chatbot API (포트 8000) - 챗봇, vidcap 처리 등
+  // Bedrock Chatbot API (포트 8000으로 통합) - 챗봇, vidcap 처리 등
   BEDROCK_API: {
     BASE_URL: process.env.REACT_APP_BEDROCK_API_URL || 'http://localhost:8000',
     ENDPOINTS: {
-      CHAT: '/api/chat',
-      PROCESS_YOUTUBE: '/api/process-youtube',
-      CHAT_HISTORY: '/api/chat-history',
-      CLEAR_HISTORY: '/api/chat-history'
+      CHAT: '/bedrock/api/chat',
+      PROCESS_YOUTUBE: '/bedrock/api/process-youtube',
+      CHAT_HISTORY: '/bedrock/api/chat-history',
+      CLEAR_HISTORY: '/bedrock/api/chat-history'
     }
   }
 };
@@ -34,9 +34,9 @@ export const apiHelpers = {
   // YouTube Reporter API 호출 
   reporterApi: {
      // --- 토큰 포함 버전 --- 로컬에서 할 때는 프론트에 토큰을 헤더에 받아와서 저장을 해줘야됨. 
-     // 조윤지 코드 추가를 해줌. 분석이 잘 되는 걸 확인함
+     // 조윤지 코드 추가를 해줘. 분석이 잘 되는 걸 확인함
       async getToken() {
-        return localStorage.getItem('access_token');
+        return localStorage.getItem('id_token');
       },
   
       async post(endpoint, data, config = {}) {
@@ -125,7 +125,7 @@ export const apiHelpers = {
   bedrockApi: {
     async post(endpoint, data, config = {}) {
       const url = `${API_CONFIG.BEDROCK_API.BASE_URL}${endpoint}`;
-      const token = localStorage.getItem('access_token');
+      const token = localStorage.getItem('id_token');
       return await fetch(url, {
         method: 'POST',
         headers: {
@@ -140,7 +140,7 @@ export const apiHelpers = {
     
     async get(endpoint, config = {}) {
       const url = `${API_CONFIG.BEDROCK_API.BASE_URL}${endpoint}`;
-      const token = localStorage.getItem('access_token');
+      const token = localStorage.getItem('id_token');
       return await fetch(url, {
         method: 'GET',
         headers: {
@@ -154,7 +154,7 @@ export const apiHelpers = {
     
     async delete(endpoint, config = {}) {
       const url = `${API_CONFIG.BEDROCK_API.BASE_URL}${endpoint}`;
-      const token = localStorage.getItem('access_token');
+      const token = localStorage.getItem('id_token');
       return await fetch(url, {
         method: 'DELETE',
         headers: {

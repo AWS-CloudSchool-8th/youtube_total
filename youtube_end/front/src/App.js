@@ -7,6 +7,7 @@ import SplitText from './components/SplitText';
 import TopBar from './components/TopBar';
 import Footer from './components/Footer';
 import BedrockChat from './components/BedrockChat';
+import FixedNotionEditor from './components/FixedNotionEditor';
 import { colors } from "./styles/colors";
 
 const AppContainer = styled.div`
@@ -135,6 +136,9 @@ function App() {
       <TopBar />
       <Routes>
         <Route path="/" element={<HomePage />} />
+        <Route path="/editor" element={<FixedNotionEditor />} />
+        <Route path="/dashboard" element={<HomePage />} />
+        <Route path="/chat" element={<ChatPage />} />
       </Routes>
       <Footer />
     </AppContainer>

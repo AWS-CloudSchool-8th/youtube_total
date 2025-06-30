@@ -6,7 +6,7 @@ import { jwtDecode } from 'jwt-decode';
 import { colors } from '../styles/colors';
 
 //조윤지
-const API_BASE_URL = process.env.REACT_APP_REPORTER_API_URL || 'http://localhost:8001';
+const API_BASE_URL = process.env.REACT_APP_REPORTER_API_URL || 'http://localhost:8000';
 console.log('API BASE URL:', API_BASE_URL);
 //여기까지 
 

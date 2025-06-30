@@ -171,7 +171,6 @@ const InputBox = () => {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [analysisMode, setAnalysisMode] = useState('reporter'); // 'reporter' 또는 'bedrock'
   const navigate = useNavigate();
 
   const handleSubmit = async (input) => {
@@ -187,14 +186,9 @@ const InputBox = () => {
         response = await apiService.analyzeDocument(input);
       } else if (/^https?:\/\//.test(input)) {
         if (/(youtube\.com|youtu\.be)/.test(input)) {
-          // YouTube URL 처리
-          if (analysisMode === 'reporter') {
-            // Reporter API로 깊이 있는 분석
-            response = await apiService.analyzeYouTube(input);
-          } else {
-            // Bedrock API로 챗봇용 처리
-            response = await apiService.processYouTubeForChatbot(input);
-          }
+          // YouTube URL 처리 - 현재 실행 중인 Reporter API만 사용
+          console.log('📊 YouTube 분석 시작:', input);
+          response = await apiService.analyzeYouTube(input);
         } else {
           // 일반 URL은 YouTube 검색으로 처리
           response = await apiService.searchYouTube(input);
@@ -204,8 +198,6 @@ const InputBox = () => {
         response = await apiService.searchYouTube(input);
       }
       
-      setResult(response);
-      
       // YouTube 분석 결과가 있으면 에디터로 이동
       if (response.analysis_results?.fsm_analysis?.final_output) {
         const analysisData = response.analysis_results.fsm_analysis;
@@ -214,9 +206,24 @@ const InputBox = () => {
             analysisData: analysisData
           } 
         });
+        return; // result 상태를 설정하지 않고 바로 종료
       }
+      
+      // 문서 분석 결과가 있으면 에디터로 이동
+      if (response.analysis_result?.analysis_results?.fsm_analysis?.final_output) {
+        const analysisData = response.analysis_result.analysis_results.fsm_analysis;
+        navigate('/editor', { 
+          state: { 
+            analysisData: analysisData
+          } 
+        });
+        return; // result 상태를 설정하지 않고 바로 종료
+      }
+      // 모든 분석이 완료되었지만 이동할 페이지가 없는 경우
+      console.log('✅ 분석 완료:', response);
     } catch (err) {
-      setError(err.message || '에러 발생');
+      console.error('❌ 분석 중 오류 발생:', err);
+      setError(err.message || '분석 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
     }
@@ -244,10 +251,15 @@ const InputBox = () => {
       }
       setFiles([]);
     } else if (inputValue.trim()) {
+      // YouTube URL이면 바로 분석 시작
       if (/(youtube\.com|youtu\.be)/.test(inputValue.trim())) {
+        console.log('🎬 YouTube URL 감지됨, 바로 분석 시작:', inputValue.trim());
         await handleSubmit(inputValue.trim());
+        setInputValue(''); // 입력 필드 초기화
       } else {
+        // 일반 텍스트는 YouTube 검색으로 처리
         navigate(`/youtube-search?query=${encodeURIComponent(inputValue.trim())}`);
+        setInputValue(''); // 입력 필드 초기화
       }
     }
   };
@@ -258,16 +270,6 @@ const InputBox = () => {
 
   return (
     <Container>
-      {/* 분석 모드 선택 */}
-      <ModeSelector>
-        <ModeButton 
-          active={analysisMode === 'reporter'} 
-          onClick={() => setAnalysisMode('reporter')}
-        >
-          📊 깊이 있는 분석
-        </ModeButton>
-      </ModeSelector>
-      
       <Box
         isDragOver={isDragOver}
         onDragOver={e => { e.preventDefault(); setIsDragOver(true); }}
@@ -309,22 +311,11 @@ const InputBox = () => {
       
       {loading && (
         <LoadingMessage>
-          {analysisMode === 'reporter' ? '📊 분석 중입니다...' : '💬 처리 중입니다...'}
+          📊 YouTube 분석 중입니다...
         </LoadingMessage>
       )}
       
       {error && <ErrorMessage>{error}</ErrorMessage>}
-      
-      {result && (
-        <ResultContainer>
-          <ResultTitle>
-            {analysisMode === 'reporter' ? '📊 분석 결과' : '💬 처리 결과'}
-          </ResultTitle>
-          <ResultContent>
-            <pre>{JSON.stringify(result, null, 2)}</pre>
-          </ResultContent>
-        </ResultContainer>
-      )}
     </Container>
   );
 };

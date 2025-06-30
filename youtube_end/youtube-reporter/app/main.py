@@ -1,10 +1,14 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.exception_handlers import RequestValidationError
+from fastapi.responses import PlainTextResponse
 
 from app.core.config import settings
 from app.routers import analysis, audio, document, youtube, report, auth, user_analysis, s3
 from app.core.database import engine
 from app.models.database_models import Base
+# bedrock_chatbot 라우터 임포트
+from app.bedrock_chatbot_router import router as bedrock_chat_router
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -21,6 +25,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# 상세한 ValidationError 로깅을 위한 핸들러
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    print("="*50)
+    print("🚨 VALIDATION ERROR 발생!")
+    print(f"📝 요청 URL: {request.url}")
+    print(f"📝 요청 메서드: {request.method}")
+    print(f"📝 에러 상세: {exc}")
+    print("="*50)
+    return PlainTextResponse(str(exc), status_code=400)
+
 # 데이터베이스 테이블 생성
 Base.metadata.create_all(bind=engine)
 
@@ -33,6 +48,8 @@ app.include_router(document.router)
 app.include_router(youtube.router)
 app.include_router(report.router)
 app.include_router(s3.router)  # S3 라우터 추가
+# bedrock_chatbot 라우터를 등록 (prefix 제거)
+app.include_router(bedrock_chat_router)
 
 @app.get("/")
 async def root():
@@ -67,7 +84,9 @@ async def root():
             "audio_streaming": "/audio/stream/{audio_id}",
             "s3_reports": "/reports/list",
             "s3_list": "/s3/list",
-            "health": "/health"
+            "health": "/health",
+            "bedrock_chat": "/bedrock/api/chat",
+            "bedrock_youtube": "/bedrock/api/process-youtube"
         }
     }
 

@@ -13,7 +13,7 @@ class ReportService:
             aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
             region_name=settings.AWS_REGION
         )
-        self.bucket_name = settings.AWS_S3_BUCKET
+        self.bucket_name = settings.S3_BUCKET
 
     async def list_reports(self, prefix: str = "reports/", max_keys: int = 100,
                          continuation_token: Optional[str] = None) -> ReportListResponse:

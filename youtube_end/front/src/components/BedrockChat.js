@@ -276,7 +276,12 @@ const BedrockChat = ({ onClose }) => {
         {messages.map((message, index) => (
           <Message key={index} isUser={message.role === 'user'}>
             <MessageBubble isUser={message.role === 'user'}>
-              {message.content}
+              {message.content.split('\n').map((line, i) => (
+                <div key={i}>
+                  {line}
+                  {i < message.content.split('\n').length - 1 && <br />}
+                </div>
+              ))}
             </MessageBubble>
           </Message>
         ))}

@@ -7,21 +7,21 @@ def test_s3_connection():
     print("\n===== S3 연결 테스트 =====")
     
     # 설정 정보 출력
-    print(f"AWS_REGION: {settings.AWS_REGION}")
-    print(f"AWS_S3_BUCKET: {settings.AWS_S3_BUCKET}")
+    print(f"S3_BUCKET: {settings.S3_BUCKET}")
     print(f"S3_BUCKET_NAME: {settings.S3_BUCKET_NAME}")
-    
-    # AWS 자격 증명 확인 (키 자체는 보안상 출력하지 않음)
-    print(f"AWS_ACCESS_KEY_ID 설정됨: {'예' if settings.AWS_ACCESS_KEY_ID else '아니오'}")
-    print(f"AWS_SECRET_ACCESS_KEY 설정됨: {'예' if settings.AWS_SECRET_ACCESS_KEY else '아니오'}")
+    print(f"S3_PREFIX: {settings.S3_PREFIX}")
+    print(f"AWS_REGION: {settings.AWS_REGION}")
+    print(f"AWS_ACCESS_KEY_ID: {settings.AWS_ACCESS_KEY_ID[:10] if settings.AWS_ACCESS_KEY_ID else 'None'}...")
+    print(f"AWS_SECRET_ACCESS_KEY: {settings.AWS_SECRET_ACCESS_KEY[:10] if settings.AWS_SECRET_ACCESS_KEY else 'None'}...")
+    print("-" * 50)
     
     try:
         # S3 클라이언트 생성
         s3_client = boto3.client(
-            's3', 
-            region_name=settings.AWS_REGION,
+            's3',
             aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY
+            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+            region_name=settings.AWS_REGION
         )
         
         # 버킷 목록 조회
@@ -30,7 +30,7 @@ def test_s3_connection():
         print(f"접근 가능한 S3 버킷 목록: {buckets}")
         
         # 지정된 버킷이 목록에 있는지 확인
-        bucket_name = settings.AWS_S3_BUCKET or settings.S3_BUCKET_NAME
+        bucket_name = settings.S3_BUCKET or settings.S3_BUCKET_NAME
         if bucket_name in buckets:
             print(f"✅ 버킷 '{bucket_name}' 접근 가능")
             

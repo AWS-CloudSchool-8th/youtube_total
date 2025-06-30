@@ -15,7 +15,14 @@ class Settings(BaseSettings):
     AWS_ACCESS_KEY_ID: Optional[str] = None
     AWS_SECRET_ACCESS_KEY: Optional[str] = None
     AWS_REGION: str = "us-west-2"
-    AWS_S3_BUCKET: Optional[str] = None
+    S3_BUCKET: Optional[str] = None
+    S3_PREFIX: Optional[str] = None
+
+    # Bedrock 설정 (bedrock_chatbot에서 통합)
+    BEDROCK_KB_ID: Optional[str] = None
+    BEDROCK_DS_ID: Optional[str] = None
+    BEDROCK_MODEL_ID: Optional[str] = None
+    YOUTUBE_LAMBDA_NAME: Optional[str] = None
 
     # Polly 설정
     POLLY_VOICE_ID: str = "Seoyeon"
@@ -39,8 +46,6 @@ class Settings(BaseSettings):
     LANGCHAIN_PROJECT: Optional[str] = None
     LANGCHAIN_TRACING_V2: Optional[str] = None
 
-    # AWS Bedrock 설정 (기본 AWS 자격증명 사용)
-    
     # AWS Cognito 설정
     COGNITO_USER_POOL_ID: Optional[str] = None
     COGNITO_CLIENT_ID: Optional[str] = None

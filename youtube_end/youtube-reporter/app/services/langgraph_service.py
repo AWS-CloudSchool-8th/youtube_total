@@ -5,8 +5,8 @@ import time
 from typing import TypedDict, List, Dict, Any
 import boto3
 import requests
-from langgraph.graph import StateGraph
-from langchain_core.runnables import Runnable, RunnableLambda
+from langgraph.graph import StateGraph, END
+from langchain_core.runnables import Runnable, RunnableLambda, RunnablePassthrough
 from langchain_aws import ChatBedrock
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_experimental.tools import PythonREPLTool
@@ -14,6 +14,7 @@ from app.core.config import settings
 from app.services.user_s3_service import user_s3_service
 from app.services.s3_service import s3_service  # S3 서비스 추가
 from app.services.state_manager import state_manager
+from app.services.youtube_processing_service import youtube_processing_service
 
 # ========== 1. 상태 정의 ==========
 class GraphState(TypedDict):
@@ -28,16 +29,75 @@ class GraphState(TypedDict):
 
 # ========== 2. Tool 정의 ==========
 def extract_youtube_caption_tool(youtube_url: str) -> str:
-    """YouTube URL에서 자막을 추출하는 함수"""
-    api_url = "https://vidcap.xyz/api/v1/youtube/caption"
-    params = {"url": youtube_url, "locale": "ko"}
-    headers = {"Authorization": f"Bearer {settings.VIDCAP_API_KEY}"}
+    """YouTube URL에서 자막을 추출하는 함수 - S3에 저장된 transcripts 파일에서 읽기"""
     try:
-        response = requests.get(api_url, params=params, headers=headers)
-        response.raise_for_status()
-        return response.json().get("data", {}).get("content", "")
+        # YouTube URL에서 video_id 추출
+        video_id = extract_video_id(youtube_url)
+        if not video_id:
+            raise Exception("YouTube URL에서 video ID를 추출할 수 없습니다.")
+        
+        print(f"🔍 Video ID: {video_id}에 해당하는 transcripts 파일 검색 중...")
+        
+        # S3에서 해당 video_id로 시작하는 파일 찾기
+        s3_client = boto3.client("s3")
+        prefix = f"transcripts/"
+        
+        # S3에서 파일 목록 조회 (최대 1000개)
+        response = s3_client.list_objects_v2(
+            Bucket=settings.S3_BUCKET,
+            Prefix=prefix,
+            MaxKeys=1000
+        )
+        
+        # video_id로 시작하는 .txt 파일 찾기 (가장 최근 파일 선택)
+        caption_file_key = None
+        latest_time = None
+        
+        if 'Contents' in response:
+            for obj in response['Contents']:
+                key = obj['Key']
+                if key.endswith('.txt') and video_id in key:
+                    # 가장 최근 파일 선택
+                    if latest_time is None or obj['LastModified'] > latest_time:
+                        latest_time = obj['LastModified']
+                        caption_file_key = key
+        
+        if not caption_file_key:
+            # 더 많은 파일이 있을 수 있으므로 페이지네이션으로 검색
+            continuation_token = response.get('NextContinuationToken')
+            while continuation_token:
+                response = s3_client.list_objects_v2(
+                    Bucket=settings.S3_BUCKET,
+                    Prefix=prefix,
+                    ContinuationToken=continuation_token,
+                    MaxKeys=1000
+                )
+                
+                if 'Contents' in response:
+                    for obj in response['Contents']:
+                        key = obj['Key']
+                        if key.endswith('.txt') and video_id in key:
+                            if latest_time is None or obj['LastModified'] > latest_time:
+                                latest_time = obj['LastModified']
+                                caption_file_key = key
+                
+                continuation_token = response.get('NextContinuationToken')
+        
+        if not caption_file_key:
+            raise Exception(f"Video ID {video_id}에 해당하는 transcripts 파일을 S3에서 찾을 수 없습니다. "
+                          f"먼저 YouTubeProcessingService로 파일을 저장해주세요.")
+        
+        # S3에서 자막 파일 읽기
+        response = s3_client.get_object(Bucket=settings.S3_BUCKET, Key=caption_file_key)
+        caption_text = response["Body"].read().decode("utf-8")
+        
+        print(f"✅ S3에서 자막 파일 읽기 완료: {caption_file_key}")
+        print(f"📄 자막 길이: {len(caption_text)}자")
+        return caption_text
+        
     except Exception as e:
-        return f"자막 추출 실패: {str(e)}"
+        print(f"❌ S3에서 자막 파일 읽기 실패: {str(e)}")
+        return f"자막 파일 읽기 실패: {str(e)}"
 
 def generate_visuals(prompt: str) -> str:
     """DALL-E를 사용한 이미지 생성 (현재는 플레이스홀더)"""
@@ -182,8 +242,8 @@ structure_prompt = ChatPromptTemplate.from_messages([
 
 llm = ChatBedrock(
     client=boto3.client("bedrock-runtime", region_name=settings.AWS_REGION),
-    model_id="anthropic.claude-3-5-sonnet-20240620-v1:0",
-    model_kwargs={"temperature": 0.0, "max_tokens": 4096}
+    model_id="anthropic.claude-3-5-sonnet-20240620-v1:0",  # 리포터용 모델 (직접 하드코딩)
+    model_kwargs={"temperature": 0.1, "max_tokens": 4096}
 )
 
 def structure_report(caption: str) -> str:

@@ -6,6 +6,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from app.models.analysis import AnalysisResponse
 from app.services.langgraph_service import langgraph_service
 from app.services.rouge_service import rouge_service
+from app.services.youtube_processing_service import youtube_processing_service
 
 class AnalysisService:
     def __init__(self):
@@ -14,16 +15,31 @@ class AnalysisService:
             chunk_overlap=200
         )
 
-    async def analyze_youtube_with_fsm(self, youtube_url: str, job_id: str = None, user_id: str = None) -> AnalysisResponse:
-        """LangGraph FSM을 사용한 YouTube 분석"""
+    async def analyze_youtube_with_fsm(self, youtube_url: str, job_id: str = None, user_id: str = None, user_email: str = None) -> AnalysisResponse:
+        """LangGraph FSM을 사용한 YouTube 분석 - YouTubeProcessingService 통합"""
         try:
+            print(f"=== YouTube 분석 시작 ===")
+            print(f"YouTube URL: {youtube_url}")
+            print(f"Job ID: {job_id}")
+            print(f"User ID: {user_id}")
+            print(f"User Email: {user_email}")
+            
+            # 1. YouTubeProcessingService로 YouTube 처리 (vidcap API → S3 저장)
+            youtube_result = await youtube_processing_service.process_youtube_to_s3(
+                youtube_url=youtube_url,
+                user_email=user_email or "anonymous@example.com"
+            )
+            
+            print(f"✅ YouTube 처리 완료: {youtube_result['s3_key']}")
+            
+            # 2. LangGraph FSM 분석 실행 (S3에 저장된 transcripts 파일 사용)
             fsm_result = await langgraph_service.analyze_youtube_with_fsm(
                 youtube_url=youtube_url,
                 job_id=job_id,
                 user_id=user_id
             )
             
-            # ROUGE 평가 계산
+            # 3. ROUGE 평가 계산
             rouge_scores = None
             if fsm_result and fsm_result.get('final_output'):
                 try:
@@ -49,7 +65,13 @@ class AnalysisService:
             analysis_results = {
                 "fsm_analysis": fsm_result,
                 "rouge_scores": rouge_scores,
-                "method": "langgraph_fsm"
+                "method": "langgraph_fsm",
+                "youtube_processing": youtube_result,  # YouTube 처리 결과 추가
+                "s3_storage": {
+                    "transcripts_file": youtube_result["s3_key"],
+                    "report_file": f"reports/{user_id or 'anonymous'}/{job_id or 'unknown'}_report.json",
+                    "metadata_file": f"metadata/{user_id or 'anonymous'}/{job_id or 'unknown'}_metadata.json"
+                }
             }
             
             return AnalysisResponse(

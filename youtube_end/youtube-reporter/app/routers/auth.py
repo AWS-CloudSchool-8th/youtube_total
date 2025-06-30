@@ -26,9 +26,15 @@ def confirm_signup(req: ConfirmSignUpRequest):
     
 @router.post("/login")
 def login(req: SignInRequest):
+    print("="*30)
+    print("🔐 로그인 요청 받음")
+    print(f"📧 이메일: {req.email}")
+    print(f"🔑 비밀번호: {'*' * len(req.password)} (길이: {len(req.password)})")
+    print("="*30)
     try:
         return sign_in_user(req.email, req.password)
     except ClientError as e:
+        print(f"❌ Cognito 로그인 실패: {e.response['Error']['Message']}")
         raise HTTPException(status_code=400, detail=e.response["Error"]["Message"])
 
 @router.post("/refresh")

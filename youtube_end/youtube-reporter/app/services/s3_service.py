@@ -12,51 +12,33 @@ class S3Service:
             aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY
         )
         
-        # AWS_S3_BUCKET을 우선 사용하고, 없으면 S3_BUCKET_NAME 사용
-        self.bucket_name = settings.AWS_S3_BUCKET or settings.S3_BUCKET_NAME
+        # S3_BUCKET을 우선 사용하고, 없으면 S3_BUCKET_NAME 사용
+        self.bucket_name = settings.S3_BUCKET or settings.S3_BUCKET_NAME
         
         # 초기화 시 버킷 정보 출력
         print(f"🪣 S3 서비스 초기화: 버킷={self.bucket_name}, 리전={settings.AWS_REGION}")
     
-    def upload_file(self, file_path, object_name=None, content_type=None, acl="public-read"):
+    def upload_file(self, file_path, object_name=None, content_type=None):
         """파일을 S3에 업로드"""
+        if object_name is None:
+            object_name = os.path.basename(file_path)
+        
         try:
-            # 객체 이름이 지정되지 않은 경우 파일 이름 사용
-            if object_name is None:
-                object_name = os.path.basename(file_path)
-            
-            # 파일 존재 확인
-            if not os.path.exists(file_path):
-                raise FileNotFoundError(f"파일을 찾을 수 없음: {file_path}")
-            
-            # 파일 크기 확인
-            file_size = os.path.getsize(file_path)
-            
-            # 업로드 옵션 설정
-            extra_args = {"ACL": acl}
+            extra_args = {}
             if content_type:
                 extra_args["ContentType"] = content_type
             
-            # 파일 업로드
-            print(f"📤 S3 업로드 시작: {file_path} → {object_name} (크기: {file_size} 바이트)")
+            self.s3_client.upload_file(
+                file_path, 
+                self.bucket_name, 
+                object_name,
+                ExtraArgs=extra_args
+            )
             
-            with open(file_path, 'rb') as file_data:
-                self.s3_client.upload_fileobj(
-                    file_data,
-                    self.bucket_name,
-                    object_name,
-                    ExtraArgs=extra_args
-                )
-            
-            # 업로드 성공 시 URL 반환
-            url = f"https://{self.bucket_name}.s3.{settings.AWS_REGION}.amazonaws.com/{object_name}"
-            print(f"✅ S3 업로드 성공: {url}")
-            return url
-            
+            return f"https://{self.bucket_name}.s3.{settings.AWS_REGION}.amazonaws.com/{object_name}"
         except Exception as e:
-            error_msg = f"❌ S3 업로드 실패: {str(e)}"
-            print(error_msg)
-            return f"[S3 upload failed: {str(e)}]"
+            print(f"❌ S3 업로드 실패: {e}")
+            raise e
     
     def list_objects(self, prefix="", max_keys=100):
         """S3 버킷 내 객체 목록 조회"""
