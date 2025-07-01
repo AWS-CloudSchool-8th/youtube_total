@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import axios from 'axios';
 import { colors } from '../../styles/colors';
 
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = 'http://34.228.65.221:8000';
 
 const Overlay = styled.div`
   position: fixed;

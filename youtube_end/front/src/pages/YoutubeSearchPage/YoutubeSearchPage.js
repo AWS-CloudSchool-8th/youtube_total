@@ -6,6 +6,7 @@ import TopBar from '../../components/TopBar/TopBar';
 import Footer from '../../components/Footer/Footer';
 import AuroraBackground from '../../components/AuroraBackground/AuroraBackground';
 import styles from './YoutubeSearchPage.module.css';
+import { API } from '../../config/api';  // ✅ 환경변수 기반 API 경로
 
 function formatDuration(duration) {
   if (!duration || duration === "0" || duration === 0) return null;
@@ -59,7 +60,10 @@ const YoutubeSearchPage = () => {
     setError(null);
     setVideos([]);
     try {
-      const res = await axios.post('/youtube/search', { query: q, max_results: 10 });
+      const res = await axios.post(
+        `${API.YOUTUBE_API.BASE_URL}${API.YOUTUBE_API.ENDPOINTS.SEARCH}`,
+        { query: q, max_results: 10 }
+      );
       setVideos(res.data.videos || []);
     } catch (err) {
       setError('검색 실패: ' + (err.response?.data?.detail || err.message));
@@ -76,10 +80,9 @@ const YoutubeSearchPage = () => {
 
   const pollJobStatus = async (jobId) => {
     try {
-      const response = await axios.get(`/youtube/jobs/${jobId}/status`);
+      const response = await axios.get(`${API.YOUTUBE_API.BASE_URL}${API.YOUTUBE_API.ENDPOINTS.JOB_STATUS(jobId)}`);
       if (response.data.status === 'completed') {
-        // 완료되면 결과 가져오기
-        const resultResponse = await axios.get(`/youtube/jobs/${jobId}/result`);
+        const resultResponse = await axios.get(`${API.YOUTUBE_API.BASE_URL}${API.YOUTUBE_API.ENDPOINTS.JOB_RESULT(jobId)}`);
         if (resultResponse.data.content) {
           navigate('/editor', {
             state: {
@@ -87,12 +90,12 @@ const YoutubeSearchPage = () => {
             }
           });
         }
-        return true; // 완료됨
+        return true;
       } else if (response.data.status === 'failed') {
         alert('분석이 실패했습니다.');
-        return true; // 완료됨 (실패)
+        return true;
       }
-      return false; // 아직 진행 중
+      return false;
     } catch (err) {
       console.error('상태 확인 실패:', err);
       return false;
@@ -103,13 +106,12 @@ const YoutubeSearchPage = () => {
     setSummaryLoading(prev => ({ ...prev, [videoId]: true }));
     try {
       const youtubeUrl = `https://www.youtube.com/watch?v=${videoId}`;
-      const response = await axios.post('/youtube/analyze', { youtube_url: youtubeUrl });
-      
+      const response = await axios.post(`${API.YOUTUBE_API.BASE_URL}${API.YOUTUBE_API.ENDPOINTS.ANALYZE}`, {
+        youtube_url: youtubeUrl
+      });
+
       if (response.data.job_id) {
-        // 작업이 시작되었으면 상태를 폴링
         const jobId = response.data.job_id;
-        
-        // 2초마다 상태 확인
         const pollInterval = setInterval(async () => {
           const isCompleted = await pollJobStatus(jobId);
           if (isCompleted) {
@@ -117,8 +119,7 @@ const YoutubeSearchPage = () => {
             setSummaryLoading(prev => ({ ...prev, [videoId]: false }));
           }
         }, 2000);
-        
-        // 5분 후 타임아웃
+
         setTimeout(() => {
           clearInterval(pollInterval);
           setSummaryLoading(prev => ({ ...prev, [videoId]: false }));
@@ -204,7 +205,7 @@ const YoutubeSearchPage = () => {
           </div>
         ))}
       </div>
-      {(!loading && videos.length === 0 && !error) && <div style={{marginTop:32, color: '#fff', textAlign: 'center', opacity: 0.8}}>검색 결과가 없습니다.</div>}
+      {(!loading && videos.length === 0 && !error) && <div style={{ marginTop: 32, color: '#fff', textAlign: 'center', opacity: 0.8 }}>검색 결과가 없습니다.</div>}
       <Footer />
     </div>
   );

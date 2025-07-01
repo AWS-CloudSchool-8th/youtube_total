@@ -6,7 +6,7 @@ import { jwtDecode } from 'jwt-decode';
 import { colors } from '../../styles/colors';
 
 //조윤지
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = 'http://34.228.65.221:8000';
 console.log('API BASE URL:', API_BASE_URL);
 //여기까지 
 

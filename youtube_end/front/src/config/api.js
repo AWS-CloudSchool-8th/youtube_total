@@ -1,240 +1,53 @@
-// API 설정
-const API_CONFIG = {
-  // YouTube Reporter API (포트 8000) - YouTube 분석, 문서 분석 등
-  REPORTER_API: {
-    BASE_URL: process.env.REACT_APP_REPORTER_API_URL || 'http://localhost:8000',
+const API = {
+  YOUTUBE_API: {
+    BASE_URL: process.env.REACT_APP_API_SERVER_URL || 'http://localhost:8000',
     ENDPOINTS: {
-      YOUTUBE_ANALYSIS: '/youtube-reporter/youtube/analyze',
-      YOUTUBE_SEARCH: '/youtube/search',
-      DOCUMENT_ANALYSIS: '/analysis/document',
-      ANALYSIS_STATUS: '/youtube-reporter/jobs',
-      AUDIO_GENERATE: '/audio/generate',
-      AUDIO_STREAM: '/audio/stream',
-      REPORTS: '/reports',
-      S3_LIST: '/s3/list',
-      AUTH: '/auth',
-      USER_ANALYSIS: '/user/youtube/analysis'
-    }
-  },
-  
-  // Bedrock Chatbot API (포트 8000으로 통합) - 챗봇, vidcap 처리 등
-  BEDROCK_API: {
-    BASE_URL: process.env.REACT_APP_BEDROCK_API_URL || 'http://localhost:8000',
-    ENDPOINTS: {
-      CHAT: '/bedrock/api/chat',
-      PROCESS_YOUTUBE: '/bedrock/api/process-youtube',
-      CHAT_HISTORY: '/bedrock/api/chat-history',
-      CLEAR_HISTORY: '/bedrock/api/chat-history'
+      SEARCH: '/youtube/search',
+      ANALYZE: '/youtube/analyze',
+      JOB_STATUS: (jobId) => `/youtube/jobs/${jobId}/status`,
+      JOB_RESULT: (jobId) => `/youtube/jobs/${jobId}/result`
     }
   }
 };
 
-// API 호출 헬퍼 함수들
-export const apiHelpers = {
-  // YouTube Reporter API 호출 
-  reporterApi: {
-     // --- 토큰 포함 버전 --- 로컬에서 할 때는 프론트에 토큰을 헤더에 받아와서 저장을 해줘야됨. 
-     // 조윤지 코드 추가를 해줘. 분석이 잘 되는 걸 확인함
-      async getToken() {
-        return localStorage.getItem('id_token');
-      },
-  
-      async post(endpoint, data, config = {}) {
-        const url = `${API_CONFIG.REPORTER_API.BASE_URL}${endpoint}`;
-        const token = await this.getToken();
-        return await fetch(url, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token && { 'Authorization': `Bearer ${token}` }),
-            ...config.headers
-          },
-          body: JSON.stringify(data),
-          ...config
-        });
-      },
-  
-      async get(endpoint, config = {}) {
-        const url = `${API_CONFIG.REPORTER_API.BASE_URL}${endpoint}`;
-        const token = await this.getToken();
-        return await fetch(url, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token && { 'Authorization': `Bearer ${token}` }),
-            ...config.headers
-          },
-          ...config
-        });
-      },
-  
-      async uploadFile(endpoint, formData, config = {}) {
-        const url = `${API_CONFIG.REPORTER_API.BASE_URL}${endpoint}`;
-        const token = await this.getToken();
-        return await fetch(url, {
-          method: 'POST',
-          headers: {
-            ...(token && { 'Authorization': `Bearer ${token}` }),
-            ...config.headers
-          },
-          body: formData,
-          ...config
-        });
-      },
-    /*async post(endpoint, data, config = {}) {
-      const url = `${API_CONFIG.REPORTER_API.BASE_URL}${endpoint}`;
-      return await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...config.headers
-        },
-        body: JSON.stringify(data),
-        ...config
-      });
-    },
-
-    
-    async get(endpoint, config = {}) {
-      const url = `${API_CONFIG.REPORTER_API.BASE_URL}${endpoint}`;
-      return await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          ...config.headers
-        },
-        ...config
-      });
-    },
-    
-    async uploadFile(endpoint, formData, config = {}) {
-      const url = `${API_CONFIG.REPORTER_API.BASE_URL}${endpoint}`;
-      return await fetch(url, {
-        method: 'POST',
-        headers: {
-          ...config.headers
-        },
-        body: formData,
-        ...config
-      });
-    }*/
-  
+const apiClient = {
+  async getToken() {
+    return localStorage.getItem('id_token');
   },
-  
-  // Bedrock Chatbot API 호출
-  bedrockApi: {
-    async post(endpoint, data, config = {}) {
-      const url = `${API_CONFIG.BEDROCK_API.BASE_URL}${endpoint}`;
-      const token = localStorage.getItem('id_token');
-      return await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` }),
-          ...config.headers
-        },
-        body: JSON.stringify(data),
-        ...config
-      });
-    },
-    
-    async get(endpoint, config = {}) {
-      const url = `${API_CONFIG.BEDROCK_API.BASE_URL}${endpoint}`;
-      const token = localStorage.getItem('id_token');
-      return await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` }),
-          ...config.headers
-        },
-        ...config
-      });
-    },
-    
-    async delete(endpoint, config = {}) {
-      const url = `${API_CONFIG.BEDROCK_API.BASE_URL}${endpoint}`;
-      const token = localStorage.getItem('id_token');
-      return await fetch(url, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` }),
-          ...config.headers
-        },
-        ...config
-      });
-    }
+
+  async post(endpoint, data, config = {}) {
+    const token = await this.getToken();
+    const headers = {
+      Authorization: token ? `Bearer ${token}` : '',
+      ...config.headers,
+    };
+
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...headers,
+      },
+      body: JSON.stringify(data),
+    });
+
+    return response.json();
+  },
+
+  async get(endpoint, config = {}) {
+    const token = await this.getToken();
+    const headers = {
+      Authorization: token ? `Bearer ${token}` : '',
+      ...config.headers,
+    };
+
+    const response = await fetch(endpoint, {
+      method: 'GET',
+      headers,
+    });
+
+    return response.json();
   }
 };
 
-// 통합 API 서비스
-export const apiService = {
-  // YouTube 분석 (Reporter API 사용) - 깊이 있는 분석
-  async analyzeYouTube(youtubeUrl) {
-    const response = await apiHelpers.reporterApi.post(
-      API_CONFIG.REPORTER_API.ENDPOINTS.YOUTUBE_ANALYSIS,
-      { youtube_url: youtubeUrl }
-    );
-    return await response.json();
-  },
-  
-  // YouTube 검색 (Reporter API 사용)
-  async searchYouTube(query, maxResults = 10) {
-    const response = await apiHelpers.reporterApi.post(
-      API_CONFIG.REPORTER_API.ENDPOINTS.YOUTUBE_SEARCH,
-      { query, max_results: maxResults }
-    );
-    return await response.json();
-  },
-  
-  // 문서 분석 (Reporter API 사용)
-  async analyzeDocument(file) {
-    const formData = new FormData();
-    formData.append('file', file);
-    const response = await apiHelpers.reporterApi.uploadFile(
-      API_CONFIG.REPORTER_API.ENDPOINTS.DOCUMENT_ANALYSIS,
-      formData
-    );
-    return await response.json();
-  },
-  
-  // Bedrock 챗봇 질문 (Bedrock API 사용)
-  async askBedrockChatbot(question) {
-    const response = await apiHelpers.bedrockApi.post(
-      API_CONFIG.BEDROCK_API.ENDPOINTS.CHAT,
-      { question }
-    );
-    return await response.json();
-  },
-  
-  // YouTube 처리 (Bedrock API 사용) - vidcap API + S3 저장 + KB 동기화
-  async processYouTubeForChatbot(youtubeUrl) {
-    // URL 파라미터로 youtube_url 전달
-    const endpoint = `${API_CONFIG.BEDROCK_API.ENDPOINTS.PROCESS_YOUTUBE}?youtube_url=${encodeURIComponent(youtubeUrl)}`;
-    console.log('🔍 processYouTubeForChatbot 호출됨');
-    console.log('🔍 YouTube URL:', youtubeUrl);
-    console.log('🔍 요청 엔드포인트:', endpoint);
-    const response = await apiHelpers.bedrockApi.get(endpoint);
-    console.log('🔍 응답 받음:', response);
-    return await response.json();
-  },
-  
-  // 채팅 히스토리 조회 (Bedrock API 사용)
-  async getChatHistory() {
-    const response = await apiHelpers.bedrockApi.get(
-      API_CONFIG.BEDROCK_API.ENDPOINTS.CHAT_HISTORY
-    );
-    return await response.json();
-  },
-  
-  // 채팅 히스토리 삭제 (Bedrock API 사용)
-  async clearChatHistory() {
-    const response = await apiHelpers.bedrockApi.delete(
-      API_CONFIG.BEDROCK_API.ENDPOINTS.CLEAR_HISTORY
-    );
-    return await response.json();
-  }
-};
-
-export default API_CONFIG; 
+export { API, apiClient as apiService };
