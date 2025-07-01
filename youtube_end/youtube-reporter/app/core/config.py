@@ -52,7 +52,7 @@ class Settings(BaseSettings):
     COGNITO_CLIENT_SECRET: Optional[str] = None
     
     # 데이터베이스 설정
-    DATABASE_URL: str = "postgresql://user:password@35.94.188.189:5432/backend_final"
+    DATABASE_URL: str = os.getenv("DATABASE_URL")
     
     # Redis 설정
     REDIS_HOST: str = "35.94.188.189"
