@@ -11,34 +11,38 @@ class S3Service:
             aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
             aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY
         )
-        
-        # S3_BUCKET을 우선 사용하고, 없으면 S3_BUCKET_NAME 사용
-        self.bucket_name = settings.S3_BUCKET or settings.S3_BUCKET_NAME
-        
-        # 초기화 시 버킷 정보 출력
+        self.bucket_name = settings.S3_BUCKET
         print(f"🪣 S3 서비스 초기화: 버킷={self.bucket_name}, 리전={settings.AWS_REGION}")
     
-    def upload_file(self, file_path, object_name=None, content_type=None):
-        """파일을 S3에 업로드"""
-        if object_name is None:
-            object_name = os.path.basename(file_path)
-        
+    def upload_file(self, file_path, object_name=None, content_type=None, acl="public-read"):
+        """
+        파일을 S3에 업로드
+        업로드 성공 시 URL 반환, 실패 시 에러 메시지 문자열 반환
+        """
         try:
-            extra_args = {}
+            if object_name is None:
+                object_name = os.path.basename(file_path)
+            if not os.path.exists(file_path):
+                raise FileNotFoundError(f"파일을 찾을 수 없음: {file_path}")
+            file_size = os.path.getsize(file_path)
+            extra_args = {"ACL": acl}
             if content_type:
                 extra_args["ContentType"] = content_type
-            
-            self.s3_client.upload_file(
-                file_path, 
-                self.bucket_name, 
-                object_name,
-                ExtraArgs=extra_args
-            )
-            
-            return f"https://{self.bucket_name}.s3.{settings.AWS_REGION}.amazonaws.com/{object_name}"
+            print(f"📤 S3 업로드 시작: {file_path} → {object_name} (크기: {file_size} 바이트)")
+            with open(file_path, 'rb') as file_data:
+                self.s3_client.upload_fileobj(
+                    file_data,
+                    self.bucket_name,
+                    object_name,
+                    ExtraArgs=extra_args
+                )
+            url = f"https://{self.bucket_name}.s3.{settings.AWS_REGION}.amazonaws.com/{object_name}"
+            print(f"✅ S3 업로드 성공: {url}")
+            return url
         except Exception as e:
-            print(f"❌ S3 업로드 실패: {e}")
-            raise e
+            error_msg = f"❌ S3 업로드 실패: {str(e)}"
+            print(error_msg)
+            return f"[S3 upload failed: {str(e)}]"
     
     def list_objects(self, prefix="", max_keys=100):
         """S3 버킷 내 객체 목록 조회"""
@@ -48,11 +52,9 @@ class S3Service:
                 Prefix=prefix,
                 MaxKeys=max_keys
             )
-            
             if 'Contents' in response:
                 return response['Contents']
             return []
-            
         except Exception as e:
             print(f"❌ S3 객체 목록 조회 실패: {str(e)}")
             return []
@@ -64,15 +66,12 @@ class S3Service:
                 Bucket=self.bucket_name,
                 Key=object_name
             )
-            
-            # 파일 내용을 UTF-8로 디코딩
             content = response['Body'].read().decode('utf-8')
             print(f"✅ S3 파일 내용 읽기 성공: {object_name}")
             return content
-            
         except Exception as e:
             print(f"❌ S3 파일 내용 읽기 실패: {object_name} - {str(e)}")
-            return None
+            return ""
 
 # 싱글톤 인스턴스
 s3_service = S3Service()

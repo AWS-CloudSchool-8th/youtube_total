@@ -1,0 +1,164 @@
+.pageContainer {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  color: white;
+  font-family: Arial, sans-serif;
+}
+
+.content {
+  flex: 1;
+  padding: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.statusCard {
+  background: rgba(255,255,255,0.1);
+  border-radius: 20px;
+  padding: 3rem;
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.2);
+  text-align: center;
+  width: 100%;
+  max-width: 500px;
+}
+
+.statusIcon {
+  font-size: 4rem;
+  margin-bottom: 1.5rem;
+  color: #eaffb7;
+}
+
+.statusIcon.completed {
+  color: #4ade80;
+}
+
+.statusIcon.error {
+  color: #ef4444;
+}
+
+.statusTitle {
+  font-size: 2rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+  color: #ffffff;
+  text-shadow: 0 0 12px rgba(255, 255, 255, 0.5);
+}
+
+.statusMessage {
+  font-size: 1.1rem;
+  color: #ffffff;
+  opacity: 0.8;
+  margin-bottom: 2rem;
+  line-height: 1.6;
+}
+
+.progressContainer {
+  width: 100%;
+  margin-bottom: 2rem;
+}
+
+.progressBar {
+  width: 100%;
+  height: 8px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, #eaffb7 0%, #4ade80 100%);
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+.progressText {
+  font-size: 0.9rem;
+  color: #ffffff;
+  opacity: 0.7;
+  text-align: center;
+}
+
+.stepsList {
+  text-align: left;
+  margin-bottom: 2rem;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem 0;
+  color: #ffffff;
+  opacity: 0.5;
+}
+
+.step.completed {
+  opacity: 1;
+}
+
+.stepIcon {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+}
+
+.stepIcon.completed {
+  background: #4ade80;
+}
+
+.actionButton {
+  background: #111;
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  padding: 1rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.actionButton:hover {
+  background: #222;
+  color: #ffffff;
+  transform: translateY(-2px);
+}
+
+.secondaryButton {
+  background: #222;
+  color: #ffffff;
+  margin-left: 1rem;
+  border: none;
+  border-radius: 12px;
+  padding: 1rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.secondaryButton:hover {
+  background: #111;
+  color: #ffffff;
+  transform: translateY(-2px);
+}
+
+.buttonContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+} 

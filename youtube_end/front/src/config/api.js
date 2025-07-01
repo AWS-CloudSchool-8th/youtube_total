@@ -4,16 +4,16 @@ const API_CONFIG = {
   REPORTER_API: {
     BASE_URL: process.env.REACT_APP_REPORTER_API_URL || 'http://localhost:8000',
     ENDPOINTS: {
-      YOUTUBE_ANALYSIS: '/youtube/analysis',
+      YOUTUBE_ANALYSIS: '/youtube-reporter/youtube/analyze',
       YOUTUBE_SEARCH: '/youtube/search',
       DOCUMENT_ANALYSIS: '/analysis/document',
-      ANALYSIS_STATUS: '/analysis',
+      ANALYSIS_STATUS: '/youtube-reporter/jobs',
       AUDIO_GENERATE: '/audio/generate',
       AUDIO_STREAM: '/audio/stream',
       REPORTS: '/reports',
       S3_LIST: '/s3/list',
       AUTH: '/auth',
-      USER_ANALYSIS: '/user-analysis'
+      USER_ANALYSIS: '/user/youtube/analysis'
     }
   },
   

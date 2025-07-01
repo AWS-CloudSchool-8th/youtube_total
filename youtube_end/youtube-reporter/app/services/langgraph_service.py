@@ -27,43 +27,50 @@ class GraphState(TypedDict):
     visual_results: List[dict]
     final_output: dict
 
-# ========== 2. Tool 정의 ==========
+# ========== 2. 자막 추출 ==========
 def extract_youtube_caption_tool(youtube_url: str) -> str:
-    """YouTube URL에서 자막을 추출하는 함수 - S3에 저장된 transcripts 파일에서 읽기"""
+    """YouTube URL에서 자막을 추출 (1차: API, 2차: S3 fallback)"""
+    # 1차: 외부 API
+    api_url = "https://vidcap.xyz/api/v1/youtube/caption"
+    params = {"url": youtube_url, "locale": "ko"}
+    headers = {"Authorization": f"Bearer {settings.VIDCAP_API_KEY}"}
     try:
-        # YouTube URL에서 video_id 추출
+        response = requests.get(api_url, params=params, headers=headers)
+        response.raise_for_status()
+        content = response.json().get("data", {}).get("content", "")
+        if content:
+            return content
+        else:
+            raise Exception("API에서 자막을 받지 못함")
+    except Exception as e:
+        print(f"[extract_youtube_caption_tool] API 실패, S3 fallback 시도: {e}")
+        # 2차: S3 fallback
+        return extract_youtube_caption_from_s3(youtube_url)
+
+def extract_youtube_caption_from_s3(youtube_url: str) -> str:
+    """S3에서 자막 파일을 찾아 읽어옴 (v1 방식)"""
+    try:
         video_id = extract_video_id(youtube_url)
         if not video_id:
             raise Exception("YouTube URL에서 video ID를 추출할 수 없습니다.")
-        
         print(f"🔍 Video ID: {video_id}에 해당하는 transcripts 파일 검색 중...")
-        
-        # S3에서 해당 video_id로 시작하는 파일 찾기
         s3_client = boto3.client("s3")
         prefix = f"transcripts/"
-        
-        # S3에서 파일 목록 조회 (최대 1000개)
         response = s3_client.list_objects_v2(
             Bucket=settings.S3_BUCKET,
             Prefix=prefix,
             MaxKeys=1000
         )
-        
-        # video_id로 시작하는 .txt 파일 찾기 (가장 최근 파일 선택)
         caption_file_key = None
         latest_time = None
-        
         if 'Contents' in response:
             for obj in response['Contents']:
                 key = obj['Key']
                 if key.endswith('.txt') and video_id in key:
-                    # 가장 최근 파일 선택
                     if latest_time is None or obj['LastModified'] > latest_time:
                         latest_time = obj['LastModified']
                         caption_file_key = key
-        
         if not caption_file_key:
-            # 더 많은 파일이 있을 수 있으므로 페이지네이션으로 검색
             continuation_token = response.get('NextContinuationToken')
             while continuation_token:
                 response = s3_client.list_objects_v2(
@@ -72,7 +79,6 @@ def extract_youtube_caption_tool(youtube_url: str) -> str:
                     ContinuationToken=continuation_token,
                     MaxKeys=1000
                 )
-                
                 if 'Contents' in response:
                     for obj in response['Contents']:
                         key = obj['Key']
@@ -80,33 +86,25 @@ def extract_youtube_caption_tool(youtube_url: str) -> str:
                             if latest_time is None or obj['LastModified'] > latest_time:
                                 latest_time = obj['LastModified']
                                 caption_file_key = key
-                
                 continuation_token = response.get('NextContinuationToken')
-        
         if not caption_file_key:
-            raise Exception(f"Video ID {video_id}에 해당하는 transcripts 파일을 S3에서 찾을 수 없습니다. "
-                          f"먼저 YouTubeProcessingService로 파일을 저장해주세요.")
-        
-        # S3에서 자막 파일 읽기
+            raise Exception(f"Video ID {video_id}에 해당하는 transcripts 파일을 S3에서 찾을 수 없습니다. 먼저 YouTubeProcessingService로 파일을 저장해주세요.")
         response = s3_client.get_object(Bucket=settings.S3_BUCKET, Key=caption_file_key)
         caption_text = response["Body"].read().decode("utf-8")
-        
         print(f"✅ S3에서 자막 파일 읽기 완료: {caption_file_key}")
         print(f"📄 자막 길이: {len(caption_text)}자")
         return caption_text
-        
     except Exception as e:
         print(f"❌ S3에서 자막 파일 읽기 실패: {str(e)}")
         return f"자막 파일 읽기 실패: {str(e)}"
 
+# ========== 3. 시각화, S3 업로드, 보고서 병합 ==========
 def generate_visuals(prompt: str) -> str:
-    """DALL-E를 사용한 이미지 생성 (현재는 플레이스홀더)"""
-    # TODO: DALL-E API 구현 또는 다른 이미지 생성 서비스 사용
+    """DALL-E를 사용한 이미지 생성 (현재는 placeholder)"""
     return f"[Visual placeholder for: {prompt[:50]}...]"
 
 def upload_to_s3(file_path: str, object_name: str = None) -> str:
     """S3에 파일 업로드"""
-    # 개선된 S3 서비스 사용
     return s3_service.upload_file(
         file_path=file_path,
         object_name=object_name,
@@ -118,28 +116,21 @@ def merge_report_and_visuals(report_text: str, visuals: List[dict], youtube_url:
     paragraphs = [p.strip() for p in report_text.strip().split("\n") if p.strip()]
     n, v = len(paragraphs), len(visuals)
     sections = []
-
-    # 유튜브 블록 먼저 추가
     if youtube_url:
         sections.append({"type": "youtube", "content": youtube_url})
-
-    # 문단과 시각화를 교차 삽입
     for i, para in enumerate(paragraphs):
         sections.append({"type": "paragraph", "content": para})
         if i < v:
             vis = visuals[i]
             if vis.get("url") and vis.get("type"):
                 sections.append({"type": vis["type"], "src": vis["url"]})
-
-    # 남은 시각화 블록이 있다면 추가
     for j in range(len(paragraphs), v):
         vis = visuals[j]
         if vis.get("url") and vis.get("type"):
             sections.append({"type": vis["type"], "src": vis["url"]})
-
     return {"format": "json", "youtube_url": youtube_url, "sections": sections}
 
-# ========== 3. 보고서 에이전트 ==========
+# ========== 4. LLM 프롬프트 및 구조화 ==========
 structure_prompt = ChatPromptTemplate.from_messages([
     ("system", """# 유튜브 자막 분석 보고서 작성 프롬프트
 
@@ -242,8 +233,8 @@ structure_prompt = ChatPromptTemplate.from_messages([
 
 llm = ChatBedrock(
     client=boto3.client("bedrock-runtime", region_name=settings.AWS_REGION),
-    model_id="anthropic.claude-3-5-sonnet-20240620-v1:0",  # 리포터용 모델 (직접 하드코딩)
-    model_kwargs={"temperature": 0.1, "max_tokens": 4096}
+    model_id="anthropic.claude-3-5-sonnet-20240620-v1:0",
+    model_kwargs={"temperature": 0.0, "max_tokens": 4096}
 )
 
 def structure_report(caption: str) -> str:
@@ -254,7 +245,7 @@ def structure_report(caption: str) -> str:
 
 report_agent_executor_runnable = RunnableLambda(structure_report)
 
-# ========== 4. 시각화 블록 분해 ==========
+# ========== 5. 시각화 블록 분해 ==========
 visual_split_prompt = ChatPromptTemplate.from_messages([
     ("system", "너는 보고서를 다음 형식의 JSON 배열로 시각화 블록을 출력해야 해:\n"
      "[{\"type\": \"chart\", \"text\": \"...\"}]\n"
@@ -268,12 +259,10 @@ def _split_report(report_text: str) -> List[dict]:
     response = llm.invoke(visual_split_prompt.format_messages(input=report_text))
     try:
         content = response.content.strip()
-        # JSON 블록 추출
         if '```json' in content:
             content = content.split('```json')[1].split('```')[0].strip()
         elif '```' in content:
             content = content.split('```')[1].split('```')[0].strip()
-        
         raw = json.loads(content)
         if not isinstance(raw, list):
             return []
@@ -302,7 +291,7 @@ class WrapVisualSplitToState(Runnable):
 
 visual_split_agent_wrapped = WrapVisualSplitToState()
 
-# ========== 5. 시각화 생성 ==========
+# ========== 6. 시각화 생성 ==========
 python_tool = PythonREPLTool()
 
 code_gen_prompt = ChatPromptTemplate.from_messages([
@@ -323,15 +312,10 @@ def dispatch_visual_block_with_python_tool(blocks: List[dict]) -> List[dict]:
             if t in ["chart", "table"]:
                 code = llm.invoke(code_gen_prompt.format_messages(input=txt)).content
                 result = python_tool.run(code)
-                
                 if os.path.exists("output.png"):
                     unique_filename = f"output-{uuid.uuid4().hex[:8]}.png"
                     os.rename("output.png", unique_filename)
-                    
-                    # 파일 경로 출력
                     print(f"📊 시각화 파일 생성: {unique_filename}")
-                    
-                    # S3 업로드
                     s3_url = upload_to_s3(unique_filename, object_name=unique_filename)
                     os.remove(unique_filename)
                     url = s3_url
@@ -341,7 +325,6 @@ def dispatch_visual_block_with_python_tool(blocks: List[dict]) -> List[dict]:
                 url = generate_visuals(txt)
             else:
                 url = f"[Unsupported type: {t}]"
-            
             results.append({"type": t, "text": txt, "url": url})
         except Exception as e:
             print(f"❌ 시각화 생성 실패: {e}")
@@ -350,26 +333,22 @@ def dispatch_visual_block_with_python_tool(blocks: List[dict]) -> List[dict]:
 
 visual_agent_executor_group = RunnableLambda(dispatch_visual_block_with_python_tool)
 
-# ========== 6. Node 정의 ==========
+# ========== 7. Node 정의 ==========
 class ToolAgent(Runnable):
     def __init__(self, func, field: str, output_field: str = None):
         self.func = func
         self.field = field
         self.output_field = output_field or field
-
     def invoke(self, state: dict, config=None):
         start = time.time()
         input_value = state.get(self.field)
         result = self.func(input_value)
-        
-        # Redis에 상태 저장
         job_id = state.get('job_id')
         if job_id:
             try:
                 state_manager.save_step_state(job_id, self.field, {self.output_field: result})
             except Exception as e:
                 print(f"⚠️ Redis 상태 저장 실패 (무시됨): {e}")
-        
         execution_time = round(time.time() - start, 2)
         print(f"[{self.field}] 실행 시간: {execution_time}초")
         return {**state, self.output_field: result}
@@ -379,25 +358,20 @@ class LangGraphAgentNode(Runnable):
         self.executor = executor
         self.input_key = input_key
         self.output_key = output_key
-
     def invoke(self, state: dict, config=None):
         start = time.time()
         input_val = state[self.input_key]
         result = self.executor.invoke(input_val)
-        
         if isinstance(result, dict) and "output" in result:
             obs = result["output"]
         else:
             obs = result
-        
-        # Redis에 상태 저장
         job_id = state.get('job_id')
         if job_id:
             try:
                 state_manager.save_step_state(job_id, self.output_key, {self.output_key: obs})
             except Exception as e:
                 print(f"⚠️ Redis 상태 저장 실패 (무시됨): {e}")
-        
         execution_time = round(time.time() - start, 2)
         print(f"[{self.input_key} → {self.output_key}] 실행 시간: {execution_time}초")
         return {**state, self.output_key: obs}
@@ -410,41 +384,23 @@ class MergeTool(Runnable):
             state.get("report_text", ""), state.get("visual_results", []), str(youtube_url or "")
         )
         print(f"[MergeTool] 실행 시간: {round(time.time() - start, 2)}초")
-        
-        # 사용자 ID와 작업 ID가 있으면 보고서를 S3에 저장
         user_id = state.get('user_id')
         job_id = state.get('job_id')
-        
-        # 보고서 저장 시도
         try:
-            # 보고서 JSON을 문자열로 변환
             report_json = json.dumps(final_output, ensure_ascii=False, indent=2)
-            
-            # 직접 S3에 저장 (user_s3_service 대신)
             report_key = f"reports/{user_id}/{job_id}_report.json"
-            
-            # 임시 파일로 저장
             temp_file = f"report_{job_id}.json"
             with open(temp_file, 'w', encoding='utf-8') as f:
                 f.write(report_json)
-            
-            # S3에 업로드
             s3_url = s3_service.upload_file(
                 file_path=temp_file,
                 object_name=report_key,
                 content_type="application/json"
             )
-            
-            # 임시 파일 삭제
             os.remove(temp_file)
-            
             print(f"✅ 보고서 S3 저장 완료: {report_key}")
             print(f"📄 보고서 URL: {s3_url}")
-            
-            # YouTube 영상 정보 가져오기
             youtube_info = get_youtube_video_info(youtube_url) if youtube_url else {}
-            
-            # 메타데이터 저장 (YouTube URL 및 영상 정보 포함)
             metadata_key = f"metadata/{user_id}/{job_id}_metadata.json"
             metadata = {
                 "youtube_url": youtube_url,
@@ -452,40 +408,29 @@ class MergeTool(Runnable):
                 "job_id": job_id,
                 "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
                 "report_url": s3_url,
-                **youtube_info  # YouTube 영상 정보 추가
+                **youtube_info
             }
-            
-            # 메타데이터 임시 파일로 저장
             temp_meta_file = f"metadata_{job_id}.json"
             with open(temp_meta_file, 'w', encoding='utf-8') as f:
                 json.dump(metadata, f, ensure_ascii=False, indent=2)
-            
-            # S3에 업로드
             s3_service.upload_file(
                 file_path=temp_meta_file,
                 object_name=metadata_key,
                 content_type="application/json"
             )
-            
-            # 임시 파일 삭제
             os.remove(temp_meta_file)
-            
         except Exception as e:
             print(f"❌ 보고서 S3 저장 실패: {e}")
-        
         return {**state, "final_output": final_output}
 
-# ========== 7. FSM 구성 ==========
+# ========== 8. FSM 구성 ==========
 def create_youtube_analysis_graph():
-    """YouTube 분석용 LangGraph 생성"""
     builder = StateGraph(state_schema=GraphState)
-
     builder.add_node("caption_node", ToolAgent(extract_youtube_caption_tool, "youtube_url", "caption"))
     builder.add_node("report_node", LangGraphAgentNode(report_agent_executor_runnable, "caption", "report_text"))
     builder.add_node("split_node", visual_split_agent_wrapped)
     builder.add_node("visual_node", LangGraphAgentNode(visual_agent_executor_group, "visual_blocks", "visual_results"))
     builder.add_node("merge_node", MergeTool())
-
     builder.set_entry_point("caption_node")
     for src, dst in [
         ("caption_node", "report_node"),
@@ -495,133 +440,48 @@ def create_youtube_analysis_graph():
         ("merge_node", "__end__")
     ]:
         builder.add_edge(src, dst)
-
     return builder.compile()
 
-# ========== 8. 서비스 클래스 ==========
+# ========== 9. 서비스 클래스 ==========
 class LangGraphService:
     def __init__(self):
         self.youtube_graph = create_youtube_analysis_graph()
-    
     async def analyze_youtube_with_fsm(self, youtube_url: str, job_id: str = None, user_id: str = None) -> Dict[str, Any]:
-        """LangGraph FSM을 사용한 YouTube 분석"""
         try:
             print(f"\n🚀 LangGraph FSM 분석 시작: {youtube_url}")
-            
-            # 상태에 job_id와 user_id 추가
-            initial_state = {
+            state = {
                 "youtube_url": youtube_url,
                 "job_id": job_id or str(uuid.uuid4()),
-                "user_id": user_id or "anonymous"
+                "user_id": user_id or "anonymous",
+                "caption": "",
+                "report_text": "",
+                "visual_blocks": [],
+                "visual_results": [],
+                "final_output": {}
             }
-            
-            # 진행률 초기화
-            if job_id:
-                try:
-                    state_manager.update_progress(job_id, 0, "분석 시작")
-                except Exception as e:
-                    print(f"⚠️ Redis 진행률 업데이트 실패 (무시됨): {e}")
-            
-            result = self.youtube_graph.invoke(initial_state)
-            
-            # 진행률 완료
-            if job_id:
-                try:
-                    state_manager.update_progress(job_id, 100, "분석 완료")
-                except Exception as e:
-                    print(f"⚠️ Redis 진행률 업데이트 실패 (무시됨): {e}")
-            
-            print("✅ LangGraph FSM 분석 완료")
+            result = await self.youtube_graph.ainvoke(state)
+            print(f"✅ LangGraph FSM 분석 완료: {result.get('final_output') is not None}")
             return result
         except Exception as e:
-            if job_id:
-                try:
-                    state_manager.update_progress(job_id, -1, f"분석 실패: {str(e)}")
-                except Exception as redis_err:
-                    print(f"⚠️ Redis 진행률 업데이트 실패 (무시됨): {redis_err}")
             print(f"❌ LangGraph FSM 분석 실패: {e}")
-            raise e
+            return {"error": str(e)}
 
+# ========== 10. 유틸 함수 ==========
 def extract_video_id(url: str) -> str:
-    """YouTube URL에서 video ID 추출"""
-    import re
-    patterns = [
-        r'(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)',
-        r'youtube\.com\/watch\?.*v=([^&\n?#]+)'
-    ]
-    
-    for pattern in patterns:
-        match = re.search(pattern, url)
-        if match:
-            return match.group(1)
-    return ""
+    """유튜브 URL에서 video_id 추출"""
+    try:
+        if "v=" in url:
+            return url.split("v=")[1].split("&")[0]
+        elif "youtu.be/" in url:
+            return url.split("youtu.be/")[1].split("?")[0]
+        else:
+            return ""
+    except Exception:
+        return ""
 
 def get_youtube_video_info(youtube_url: str) -> Dict[str, str]:
-    """YouTube 영상 정보 가져오기"""
-    try:
-        video_id = extract_video_id(youtube_url)
-        if not video_id:
-            return {}
-        
-        # YouTube Data API v3 사용
-        api_key = settings.YOUTUBE_API_KEY
-        if not api_key:
-            print("YouTube API 키가 설정되지 않았습니다.")
-            return {
-                "youtube_title": f"YouTube Video - {video_id}",
-                "youtube_channel": "Unknown Channel",
-                "youtube_duration": "Unknown",
-                "youtube_thumbnail": f"https://img.youtube.com/vi/{video_id}/default.jpg"
-            }
-        
-        url = f"https://www.googleapis.com/youtube/v3/videos?id={video_id}&key={api_key}&part=snippet,contentDetails"
-        response = requests.get(url)
-        response.raise_for_status()
-        data = response.json()
-        
-        if data.get("items") and len(data["items"]) > 0:
-            video_info = data["items"][0]
-            snippet = video_info.get("snippet", {})
-            content_details = video_info.get("contentDetails", {})
-            
-            # ISO 8601 duration을 읽기 쉬운 형태로 변환
-            duration = content_details.get("duration", "")
-            if duration:
-                # PT4M13S -> 4:13 형태로 변환
-                import re
-                match = re.match(r'PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?', duration)
-                if match:
-                    hours, minutes, seconds = match.groups()
-                    hours = int(hours) if hours else 0
-                    minutes = int(minutes) if minutes else 0
-                    seconds = int(seconds) if seconds else 0
-                    
-                    if hours > 0:
-                        duration = f"{hours}:{minutes:02d}:{seconds:02d}"
-                    else:
-                        duration = f"{minutes}:{seconds:02d}"
-            
-            return {
-                "youtube_title": snippet.get("title", f"YouTube Video - {video_id}"),
-                "youtube_channel": snippet.get("channelTitle", "Unknown Channel"),
-                "youtube_duration": duration or "Unknown",
-                "youtube_thumbnail": snippet.get("thumbnails", {}).get("default", {}).get("url", f"https://img.youtube.com/vi/{video_id}/default.jpg")
-            }
-        else:
-            return {
-                "youtube_title": f"YouTube Video - {video_id}",
-                "youtube_channel": "Unknown Channel",
-                "youtube_duration": "Unknown",
-                "youtube_thumbnail": f"https://img.youtube.com/vi/{video_id}/default.jpg"
-            }
-            
-    except Exception as e:
-        print(f"YouTube 정보 가져오기 실패: {e}")
-        return {
-            "youtube_title": f"YouTube Video - {video_id}",
-            "youtube_channel": "Unknown Channel",
-            "youtube_duration": "Unknown",
-            "youtube_thumbnail": f"https://img.youtube.com/vi/{video_id}/default.jpg"
-        }
+    """유튜브 영상의 기본 정보 반환 (확장 가능)"""
+    # TODO: 필요시 YouTube Data API 등으로 확장
+    return {"url": youtube_url}
 
 langgraph_service = LangGraphService()

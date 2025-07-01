@@ -3,13 +3,14 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import { createGlobalStyle } from 'styled-components';
 import axios from "axios";
-import YoutubeSearchPage from './components/YoutubeSearchPage';
-import FixedNotionEditor from './components/FixedNotionEditor';
-import Dashboard from './components/Dashboard';
-import AnalysisStatus from './components/AnalysisStatus';
+import YoutubeSearchPage from './pages/YoutubeSearchPage/YoutubeSearchPage';
+// import FixedNotionEditor from './components/FixedNotionEditor/FixedNotionEditor'; // Not found in pages, so commented out
+import Dashboard from './pages/DashboardPage/DashboardPage';
+// import AnalysisStatus from './components/AnalysisStatus/AnalysisStatus'; // Not a page, so keep as is or remove if not used
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import EditorPage from './pages/EditorPage/EditorPage';
 
-axios.defaults.baseURL = process.env.REACT_APP_API_BASE_URL;
+axios.defaults.baseURL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000';
 
 console.log('API BASE URL:', process.env.REACT_APP_API_BASE_URL);
 
@@ -73,9 +74,9 @@ root.render(
       <Routes>
         <Route path="/" element={<App />} />
         <Route path="/youtube-search" element={<PrivateRoute><YoutubeSearchPage /></PrivateRoute>} />
-        <Route path="/editor" element={<PrivateRoute><FixedNotionEditor /></PrivateRoute>} />
+        <Route path="/editor" element={<PrivateRoute><EditorPage /></PrivateRoute>} />
         <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
-        <Route path="/analysis/:jobId" element={<PrivateRoute><AnalysisStatus /></PrivateRoute>} />
+        {/* <Route path="/analysis/:jobId" element={<PrivateRoute><AnalysisStatus /></PrivateRoute>} /> */}
       </Routes>
     </BrowserRouter>
   </>

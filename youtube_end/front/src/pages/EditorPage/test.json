@@ -1,0 +1,402 @@
+{
+  "report": {
+    "success": true,
+    "title": "**개요**\n이 영상은 인공지능(AI)의 현재와 미래, 그리고 이에 따른 교육과 사회적 변화에 대해 다루는 대담 형식의 콘텐츠입니다",
+    "summary": "**주요 내용**  1. **교육과 미래 준비** - 단순한 코딩 교육을 넘어선 AI 활용 능력의 중요성 강조 - 개인의 관심사와 AI를 결합하는 능력이 중요 - 모든 사람이 AI 개발자가 될 필요는 없으며, 각자의 분야에서 AI를 활용하는 방법을 배워야 함  4.",
+    "sections": [
+      {
+        "id": "section_1",
+        "title": "섹션 1",
+        "type": "text",
+        "content": "**개요**\n이 영상은 인공지능(AI)의 현재와 미래, 그리고 이에 따른 교육과 사회적 변화에 대해 다루는 대담 형식의 콘텐츠입니다. 특히 AI 시대에 인간의 역할과 교육 방향에 대한 심도 있는 논의가 이루어졌습니다.",
+        "level": 2,
+        "keywords": []
+      },
+      {
+        "id": "visual_1",
+        "title": "AI vs 인간: 능력 영역 비교",
+        "type": "visualization",
+        "visualization_type": "radar",
+        "data": {
+          "type": "radar",
+          "library": "chartjs",
+          "title": "AI vs 인간: 능력 영역 비교",
+          "chart_type": "radar",
+          "data": {
+            "labels": [
+              "창작 활동",
+              "문제해결",
+              "감정적 소통",
+              "데이터 처리",
+              "직관적 판단",
+              "윤리적 결정"
+            ],
+            "datasets": [
+              {
+                "label": "인간",
+                "data": [
+                  85,
+                  75,
+                  95,
+                  40,
+                  90,
+                  95
+                ],
+                "backgroundColor": "rgba(54, 162, 235, 0.2)",
+                "borderColor": "rgba(54, 162, 235, 1)",
+                "pointBackgroundColor": "rgba(54, 162, 235, 1)"
+              },
+              {
+                "label": "AI",
+                "data": [
+                  70,
+                  90,
+                  30,
+                  100,
+                  45,
+                  20
+                ],
+                "backgroundColor": "rgba(255, 99, 132, 0.2)",
+                "borderColor": "rgba(255, 99, 132, 1)",
+                "pointBackgroundColor": "rgba(255, 99, 132, 1)"
+              }
+            ]
+          },
+          "options": {
+            "responsive": true,
+            "plugins": {
+              "title": {
+                "display": true,
+                "text": "AI와 인간의 능력 영역 비교 분석"
+              },
+              "legend": {
+                "position": "top"
+              }
+            },
+            "scales": {
+              "r": {
+                "min": 0,
+                "max": 100,
+                "beginAtZero": true
+              }
+            }
+          },
+          "insight": "AI는 데이터 처리와 논리적 문제해결에서 우위를 보이지만, 인간은 감정적 소통, 윤리적 판단, 창의적 활동에서 우수한 능력을 보여줍니다. 특히 감정적 소통과 윤리적 결정에서 인간과 AI의 격차가 가장 크게 나타나며, 이는 AI 시대에도 인간만이 가질 수 있는 고유한 가치 영역임을 시사합니다."
+        },
+        "insight": "AI는 데이터 처리와 논리적 문제해결에서 우위를 보이지만, 인간은 감정적 소통, 윤리적 판단, 창의적 활동에서 우수한 능력을 보여줍니다. 특히 감정적 소통과 윤리적 결정에서 인간과 AI의 격차가 가장 크게 나타나며, 이는 AI 시대에도 인간만이 가질 수 있는 고유한 가치 영역임을 시사합니다.",
+        "purpose": "comparison",
+        "user_benefit": "AI 시대에서 인간만의 고유한 가치와 AI의 역할을 명확히 구분하여 이해"
+      },
+      {
+        "id": "section_3",
+        "title": "섹션 3",
+        "type": "text",
+        "content": "1. **AI의 현재와 발전**\n- 현재의 AI는 '약한 인공지능' 단계로, 학습된 데이터를 기반으로 결과를 도출\n- 알파고와 이세돌의 대국이 대표적인 약한 인공지능의 사례\n- 단순한 챗봇에서 시작하여 점차 복잡한 대화가 가능한 AI로 발전\n- 많은 AI 기업들이 독자적인 기술과 서비스를 개발 중",
+        "level": 2,
+        "keywords": []
+      },
+      {
+        "id": "section_4",
+        "title": "섹션 4",
+        "type": "text",
+        "content": "2. **AI와 인간의 관계**\n- AI는 이미 그림 그리기, 시 쓰기 등 창작 활동도 가능\n- AI 생성물과 인간 창작물을 구분하기 어려워지는 시대 도래\n- AI를 활용할 줄 아는 사람과 그렇지 못한 사람 간의 격차 발생 가능성",
+        "level": 2,
+        "keywords": []
+      },
+      {
+        "id": "visual_2",
+        "title": "기본 차트",
+        "type": "visualization",
+        "visualization_type": "chart",
+        "data": {
+          "type": "chart",
+          "library": "chartjs",
+          "config": {
+            "type": "bar",
+            "data": {
+              "labels": [
+                "항목 1",
+                "항목 2",
+                "항목 3"
+              ],
+              "datasets": [
+                {
+                  "label": "데이터",
+                  "data": [
+                    10,
+                    20,
+                    15
+                  ],
+                  "backgroundColor": [
+                    "#667eea",
+                    "#f093fb",
+                    "#4facfe"
+                  ]
+                }
+              ]
+            },
+            "options": {
+              "responsive": true,
+              "plugins": {
+                "title": {
+                  "display": true,
+                  "text": "기본 차트"
+                }
+              }
+            }
+          }
+        },
+        "insight": "시각화 생성 중 오류가 발생하여 기본 차트를 표시합니다.",
+        "purpose": "timeline",
+        "user_benefit": "AI 발전의 흐름과 각 단계별 특징을 한눈에 파악 가능"
+      },
+      {
+        "id": "section_5",
+        "title": "섹션 5",
+        "type": "text",
+        "content": "3. **교육과 미래 준비**\n- 단순한 코딩 교육을 넘어선 AI 활용 능력의 중요성 강조\n- 개인의 관심사와 AI를 결합하는 능력이 중요\n- 모든 사람이 AI 개발자가 될 필요는 없으며, 각자의 분야에서 AI를 활용하는 방법을 배워야 함",
+        "level": 2,
+        "keywords": []
+      },
+      {
+        "id": "section_6",
+        "title": "섹션 6",
+        "type": "text",
+        "content": "4. **사회적 변화와 대응**\n- AI가 많은 일을 대체할 수 있는 시대가 도래\n- 인간만의 고유한 가치와 역할에 대한 재정의 필요\n- 소통과 인간관계의 중요성이 더욱 부각될 것으로 예상",
+        "level": 2,
+        "keywords": []
+      },
+      {
+        "id": "visual_3",
+        "title": "AI 시대의 핵심 역량 체계도",
+        "type": "visualization",
+        "visualization_type": "network",
+        "data": {
+          "type": "network",
+          "library": "visjs",
+          "network_type": "hierarchy",
+          "data": {
+            "nodes": [
+              {
+                "id": 1,
+                "label": "AI 시대\n핵심 역량",
+                "title": "AI 시대에 필요한 핵심 역량들",
+                "color": "#4a90e2",
+                "shape": "hexagon",
+                "size": 30
+              },
+              {
+                "id": 2,
+                "label": "AI 리터러시",
+                "title": "AI 기술 이해와 활용 능력",
+                "color": "#50e3c2",
+                "group": 1
+              },
+              {
+                "id": 3,
+                "label": "창의적 사고",
+                "title": "새로운 아이디어 창출 능력",
+                "color": "#f5a623",
+                "group": 1
+              },
+              {
+                "id": 4,
+                "label": "문제해결 능력",
+                "title": "복잡한 문제를 해결하는 능력",
+                "color": "#b8e986",
+                "group": 1
+              },
+              {
+                "id": 5,
+                "label": "소통 능력",
+                "title": "효과적인 의사소통과 협업 능력",
+                "color": "#bd10e0",
+                "group": 1
+              },
+              {
+                "id": 6,
+                "label": "AI 도구 활용",
+                "title": "AI 도구 실제 사용 능력",
+                "color": "#50e3c2",
+                "group": 2
+              },
+              {
+                "id": 7,
+                "label": "AI 윤리 이해",
+                "title": "AI 윤리적 판단력",
+                "color": "#50e3c2",
+                "group": 2
+              },
+              {
+                "id": 8,
+                "label": "혁신적 사고",
+                "title": "기존 틀을 벗어난 사고",
+                "color": "#f5a623",
+                "group": 2
+              },
+              {
+                "id": 9,
+                "label": "융합적 사고",
+                "title": "다양한 분야 통합 능력",
+                "color": "#f5a623",
+                "group": 2
+              },
+              {
+                "id": 10,
+                "label": "분석적 사고",
+                "title": "논리적 분석 능력",
+                "color": "#b8e986",
+                "group": 2
+              },
+              {
+                "id": 11,
+                "label": "실행력",
+                "title": "해결책 실천 능력",
+                "color": "#b8e986",
+                "group": 2
+              },
+              {
+                "id": 12,
+                "label": "대인관계",
+                "title": "타인과의 관계 형성 능력",
+                "color": "#bd10e0",
+                "group": 2
+              },
+              {
+                "id": 13,
+                "label": "협업 능력",
+                "title": "팀워크 및 협업 능력",
+                "color": "#bd10e0",
+                "group": 2
+              }
+            ],
+            "edges": [
+              {
+                "from": 1,
+                "to": 2,
+                "arrows": "to"
+              },
+              {
+                "from": 1,
+                "to": 3,
+                "arrows": "to"
+              },
+              {
+                "from": 1,
+                "to": 4,
+                "arrows": "to"
+              },
+              {
+                "from": 1,
+                "to": 5,
+                "arrows": "to"
+              },
+              {
+                "from": 2,
+                "to": 6,
+                "arrows": "to"
+              },
+              {
+                "from": 2,
+                "to": 7,
+                "arrows": "to"
+              },
+              {
+                "from": 3,
+                "to": 8,
+                "arrows": "to"
+              },
+              {
+                "from": 3,
+                "to": 9,
+                "arrows": "to"
+              },
+              {
+                "from": 4,
+                "to": 10,
+                "arrows": "to"
+              },
+              {
+                "from": 4,
+                "to": 11,
+                "arrows": "to"
+              },
+              {
+                "from": 5,
+                "to": 12,
+                "arrows": "to"
+              },
+              {
+                "from": 5,
+                "to": 13,
+                "arrows": "to"
+              }
+            ]
+          },
+          "options": {
+            "layout": {
+              "hierarchical": {
+                "enabled": true,
+                "direction": "UD",
+                "sortMethod": "directed",
+                "levelSeparation": 150
+              }
+            },
+            "physics": {
+              "enabled": false
+            },
+            "nodes": {
+              "font": {
+                "size": 16
+              }
+            },
+            "edges": {
+              "smooth": {
+                "type": "cubicBezier"
+              }
+            }
+          }
+        },
+        "insight": "AI 시대의 핵심 역량은 크게 4가지 영역(AI 리터러시, 창의적 사고, 문제해결 능력, 소통 능력)으로 구분되며, 각 영역은 2개의 세부 역량으로 구체화됩니다. 특히 모든 역량이 서로 연결되어 있어 통합적 발달이 중요함을 시사합니다.",
+        "purpose": "hierarchy",
+        "user_benefit": "미래 교육에서 중점을 둬야 할 역량들을 구조적으로 이해 가능"
+      },
+      {
+        "id": "section_7",
+        "title": "섹션 7",
+        "type": "text",
+        "content": "**세부 사항**\n- AI는 기존 데이터를 학습하여 결과를 도출하는 방식으로 작동\n- AI 시대에는 단순 지식 습득보다 창의적 사고와 문제해결 능력이 중요\n- 개인의 적성과 흥미를 살리면서 AI를 활용하는 방법을 찾아야 함\n- AI 리터러시(AI 활용 능력)가 새로운 필수 역량으로 부상",
+        "level": 2,
+        "keywords": []
+      },
+      {
+        "id": "section_8",
+        "title": "섹션 8",
+        "type": "text",
+        "content": "**핵심 요점**\n1. AI는 빠르게 발전하고 있으며, 인간의 많은 활동을 대체할 수 있는 수준에 도달하고 있다.\n2. 미래 교육은 단순한 코딩이나 AI 개발보다 AI를 활용한 창의적 문제해결에 초점을 맞춰야 한다.\n3. 각 개인은 자신의 관심 분야에서 AI를 효과적으로 활용하는 방법을 배워야 한다.\n4. AI 시대에도 인간만의 고유한 가치와 창의성은 여전히 중요하다.\n5. 소통과 인간관계의 가치는 AI 시대에 더욱 중요해질 것이다.",
+        "level": 2,
+        "keywords": []
+      }
+    ],
+    "statistics": {
+      "total_sections": 10,
+      "text_sections": 7,
+      "visualizations": 3
+    },
+    "process_info": {
+      "youtube_url": "https://www.youtube.com/watch?v=i1VqqX4iAZ0",
+      "caption_length": 8554,
+      "summary_length": 1080,
+      "user_id": "28d183a0-80a1-70a9-ccd5-2ca14b39d11b",
+      "job_id": "3941b1a2-01f8-4f3c-b6d3-b5721736c87b",
+      "generated_at": ""
+    }
+  },
+  "metadata": {
+    "job_id": "3941b1a2-01f8-4f3c-b6d3-b5721736c87b",
+    "user_id": "28d183a0-80a1-70a9-ccd5-2ca14b39d11b",
+    "youtube_url": "https://www.youtube.com/watch?v=i1VqqX4iAZ0",
+    "created_at": "2025-06-27T00:20:21.405772",
+    "service": "youtube_reporter"
+  }
+} 

@@ -20,12 +20,12 @@ def test_s3_connection():
     aws_secret_key = os.getenv("AWS_SECRET_ACCESS_KEY")
     aws_region = os.getenv("AWS_REGION")
     s3_bucket = os.getenv("S3_BUCKET")
-    s3_bucket_name = os.getenv("S3_BUCKET_NAME", s3_bucket)  # S3_BUCKET을 기본값으로 사용
+    # s3_bucket_name = os.getenv("S3_BUCKET_NAME", s3_bucket)  # S3_BUCKET을 기본값으로 사용
     
     # 설정 정보 출력
     print("=== S3 설정 확인 ===")
     print(f"S3_BUCKET: {s3_bucket}")
-    print(f"S3_BUCKET_NAME: {s3_bucket_name}")
+    # print(f"S3_BUCKET_NAME: {s3_bucket_name}")
     print(f"AWS_REGION: {aws_region}")
     print("-" * 50)
     
@@ -48,7 +48,7 @@ def test_s3_connection():
         print(f"접근 가능한 S3 버킷 목록: {buckets}")
         
         # 지정된 버킷이 목록에 있는지 확인
-        bucket_name = s3_bucket or s3_bucket_name
+        bucket_name = s3_bucket
         if bucket_name in buckets:
             print(f"✅ 버킷 '{bucket_name}' 접근 가능")
             

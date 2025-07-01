@@ -1,0 +1,129 @@
+.container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 18px;
+  margin-bottom: 10px;
+}
+
+.box {
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  background: rgba(255,255,255,0.05);
+  border: 2px solid #3b82f6;
+  border-radius: 18px;
+  box-shadow: 0 2px 16px 0 rgba(15, 23, 42, 0.27);
+  display: flex;
+  align-items: center;
+  padding: 10px 16px;
+  gap: 8px;
+  backdrop-filter: blur(2px);
+  transition: border 0.2s, background 0.2s;
+  overflow-x: auto;
+}
+
+.input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 1.13rem;
+  color: #ffffff;
+  outline: none;
+  padding: 4px 0;
+}
+
+.input::placeholder {
+  color: #6b7280;
+  font-size: 1rem;
+}
+
+.arrowButton {
+  background: #111;
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  color: #ffffff;
+  box-shadow: 0 0 8px #222;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-left: 6px;
+}
+
+.arrowButton:hover {
+  background: #222;
+}
+
+.fileTag {
+  display: flex;
+  align-items: center;
+  background: rgba(255,255,255,0.05);
+  border-radius: 20px;
+  padding: 4px 12px 4px 8px;
+  margin-right: 8px;
+  font-size: 15px;
+}
+
+.fileName {
+  margin: 0 6px;
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #ffffff;
+}
+
+.removeBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  margin-left: 4px;
+  font-size: 16px;
+  color: #9ca3af;
+}
+
+.removeBtn:hover {
+  color: #ef4444;
+}
+
+.fileInput {
+  display: none;
+}
+
+.fileLabel {
+  cursor: pointer;
+}
+
+.loading {
+  color: #ffffff;
+  margin-top: 10px;
+}
+
+.error {
+  color: #ef4444;
+  margin-top: 10px;
+}
+
+.result {
+  color: #3b82f6;
+  text-align: left;
+  margin-top: 20px;
+}
+
+.result pre {
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.filesContainer {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-right: 8px;
+} 
